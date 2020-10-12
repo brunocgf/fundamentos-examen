@@ -1,0 +1,293 @@
+---
+title: "Examen parcial - Otoño 2020"
+author: Alfredo Garbuno Iñigo
+output: html_document
+---
+
+**Entrega:** Enviar la carpeta que incluya datos y codigo de solución a mas
+tardar el 19 de octubre antes de las 12:00pm (mediodia), por correo electrónico
+con el título fundamentos-parcial, un solo documento por equipo. No se aceptarán
+entregas extemporáneas. Será mejor entregar un examen resuelto parcialmente, que
+no entregar nada.
+
+**Instrucciones:**
+  
+* Tus respuestas deben ser claras y debes explicar los resultados, incluye
+también tus procedimientos/código de manera ordenada, y el código comentado.
+
+* Se evaluará la presentación de resultados (calidad de las gráficas, tablas,
+...), revisa la sección de visualización en las notas.
+
+* Las sesiones del Martes 13 y Jueves 15 a las 10 am, serán espacios para
+resolver dudas que puedan surgir del exámen.
+
+* No pueden compartir soluciones entre diferentes equipos, o alumnos del grupo
+001 de esta misma materia.
+
+* Al entregar este examen afirmas que el trabajo se realizó sólo con tu
+compañero de equipo. El material que utilizaste para apoyarte consistió de las
+notas en clase (pdf en canvas), el codigo fuente de las notas en el repositorio
+de Github, y el video disponible de la sesión de Martes 6 de Octubre. 
+
+* Al entregar estás dando tu consentimiento para que bajo sospecha y suficiente
+evidencia de copia se anule tu evaluación.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+
+  
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(patchwork)
+library(nullabor)
+library(rsample)
+```
+
+
+# Análisis exporatorio (25 \%)
+
+### 1. NBER TH 
+
+Considera la tabla de datos dada en tabla_nber_th.csv. Es la tabla de
+frecuencias de 4353 pilotos de la segunda guerra mundial, donde los individuos
+están clasificados según:
+  
+* Tipo de ocupación en 1969. SE significa self-employed.  
+* Resultados de estudios de aptitud de 1943 (A5 es el nivel más alto, y A1 el
+más bajo).
+* Nivel de educación en 1969 (esta incluye años de escuela en 1943 más estudios
+posteriores a la guerra). E4 es el nivel más alto y E1 es el nivel más bajo.
+
+1. ¿Qué relación existe entre aptitud (1943) y el nivel de educación (1969)?
+Describe esta relación usando tablas de porcentajes y de índices (o perfiles).
+
+```{r}
+
+
+```
+
+
+2. Describe la relación entre nivel de educación y ocupación ¿Qué concluyes de esta relación? ¿Cuáles dirías que son ocupaciones asociadas a educación alta y cuáles a educación baja?
+
+```{r}
+
+```
+
+# Mini-proyecto (75 \% + 5\%)
+
+Utilizaremos los datos de un experimento de modificación del
+tiempo *(weather)* en el cual se investigó el efecto de yoduro de plata (IAg)
+para atenuar tormentas eléctricas [Baughman et al
+1976](https://www.jstor.org/stable/26177578?seq=1#metadata_info_tab_contents)
+
+Los datos se generaron seleccionando al azar tormentas candidato en donde se
+incorporó el aerosol *(seeding)* de manera aleatoria. Es decir, una vez
+seleccionando una posible tormenta, se decidió al azar si rociar o no las nubes
+con el aerosol mencionado.
+
+Los resultados se pueden cargar de la siguiente tabla. Las columnas son la fecha
+en la que ocurrió la tormenta, el número de truenos que hicieron contacto con
+tierra, y el indicador si la tormenta fue tratada con aerosoles o no. Previo a la 
+recolección de datos se espera que el yoduro de plata disminuya el número de 
+truenos que impacten la tierra.
+
+```{r}
+truenos <- read_csv('datos/tormentas.csv')
+truenos
+```
+
+## Análisis exploratorio y pruebas de hipótesis 
+
+1. Ahora haremos un breve EDA para determinar ciertos supuestos para aplicar las
+técnicas que hemos visto en clase. Haz resumens númericos del número de truenos 
+reportados. 
+
+**R. **
+
+```{r}
+
+```
+
+2. Qué observaciones puedes hacer de este breve resumen? (Considera que la
+variable de interés son los conteos de truenos)
+
+**R. **
+
+3. Ahora trataremos de validar un supuesto clásico, el supuesto de normalidad.
+Auxiliate de herramientas gráficas para explorar este supuesto y determinar si
+es razonable para nuestro conjunto de datos.
+
+**R. **
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+Posiblemente estén tentados a descartar los valores atípicos. Claramente tenemos
+un problema. Si quisiéramos hacer una prueba de hipótesis por medio de
+diferencias en media, dicho valor atípico sesgaría nuestra distribución de
+referencia. Y el efecto sería catastrófico, valores grandes de nuestro estimador
+de prueba se verían como datos usuales bajo la distribución de referencias.
+
+Una alternativa para estos casos, que no vimos en clase, es hacer un prueba de
+diferencia en suma de órdenes *(sum of ranks).* Para esto ordenamos los datos
+por la variable `conteos` y asignamos una variable `orden` que asigna el lugar
+que dicho registro recibe.
+
+```{r}
+
+truenos <- truenos %>% 
+  arrange(conteos) %>% 
+  mutate(orden = min_rank(conteos))
+
+truenos
+
+```
+
+La idea es sencilla, si un grupo tiende a tener menores observaciones *la suma
+de sus órdenes* será menor que la suma de los órdenes del otro grupo. La
+diferencia de la suma de órdenes será nuestro estadístico de prueba. Y podremos
+comparar el observado con respecto a la distribución de referencia.
+
+4. Escribe el código adecuado para nuestro estadístico de prueba: la diferencia
+de la suma de órdenes.
+
+**R. **
+
+```{r}
+
+```
+
+5. La distribución de referencia implica todas las asignaciones al azar de la 
+etiqueta que marca si la tormenta fue modificada artificialmente con aerosol. 
+Cuántas posibilidades existen para dicha distribución?
+
+**R. **
+
+6. Por suerte, ya no estamos en los 70's y podemos auxiliarnos de simulación para
+construir la distribución de permutaciones. Genera las permutaciones correspondientes
+por medio de simulación. Alrededor de $10^4$ serán mas que suficientes. 
+
+**R. **
+
+```{r, cache = T}
+
+```
+
+7. Calcula el estadístico de prueba para las permutaciones y grafica un histograma donde muestres
+el estadistico de prueba observado. 
+
+**R. **
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+8. Calcula el *valor-p* de la hipótesis nula y escribe tu reporte sobre dicha prueba de hipótesis. 
+
+**R. **
+
+```{r}
+
+```
+
+**5\% extra.** Acontinuación mostramos lo que una prueba vista en cursos clásicos de
+estadística arrojaría. Puedes interpretarla?
+
+```{r, warning = FALSE}
+
+wilcox.test(truenos$conteos~truenos$aerosol, 
+            alternative="greater") 
+
+```
+
+**R. **
+
+# Distribución *bootstrap* para estimadores con cocientes
+
+Supongamos ahora que para efectos del análisis la dispersión de los datos de las
+tormentas se pueden caracterizar por medio de la estadística de escala en L
+*(L-scale)* [Hoskin,
+1990](https://www.jstor.org/stable/2345653?seq=1#metadata_info_tab_contents),
+$$ \lambda_2 = \frac{2}{n (n -1)} \sum_{i = 1}^{n-1} \sum_{j = i + 1}^n |x_i - x_j|,$$
+donde $\lambda_2$ caracteriza la mitad de la distancia promedio entre todos los
+posibles pares en una muestra de tamaño $n.$ Para un conjunto de datos muy
+concentrado el valor de $\lambda_2$ será muy pequeño, mientras que para un
+conjunto de datos mas dispersos éste será grande.
+
+Compararemos el valor de $\lambda_2$ para las tormentas tratadas con aerosoles y
+las tormentas sin el tratamiento. Para esto compararemos el cociente 
+$$\theta_L = \frac{\lambda_2^{S}}{\lambda_2^{N}},$$
+donde $\lambda_2^{S}$ denota la estadística $L$ calculada para las tormentas con
+aerosol, y $\lambda_2^{N}$ para las tormentas sin aerosol.
+
+Si siguiéramos el camino de prueba de hipótesis consideraríamos una hipótesis nula donde
+$\theta_L = 1$.
+
+9. Escribe la función que calcule la estadística $\lambda_2$. Para esto
+sugerimos le heches un ojo a la función `dist`. Una vez que tengas esa función
+utilizala para realizar simulaciones como en los puntos anteriores y puedas
+explorar la distribución de referencia. Qué observas de la distribución
+resultante?
+
+**R. **
+
+```{r}
+
+help(dist)
+
+```
+
+10. Cuál es tu conjetura de que la distribución de referencia tenga esa forma?
+
+**R. **
+
+En este caso hacer una prueba de hipótesis para la estadística de la
+$L-$dispersión por medio de permutaciones no es la mejor estrategia. Esto es por
+que la hipótesis nula alberga el supuesto de que **todos** los aspectos de la
+distribución de truenos que golpean la tierra son los mismos tanto para las
+tormentas modificadas por aerosoles y las que no lo son. En este caso,
+quisiéramos ser mas laxos y permitir algunas propiedades diferentes entre las
+dos distribuciones.
+
+Usaremos el método de *bootstrap* para calcular la distribución de remuestreo 
+de nuestra estadística observada. Como sabemos, el método de bootstrap nos informa
+de la dispersión de nuestra estadística de interés, que en este caso es la $L-$dispersión. 
+
+11. Escribe el código necesario para implementar un bootstrap no paramétrico.
+Recuerda que el remuestreo debe de respetar el proceso generador de datos.
+*Pista:* Sugerimos utilizar la libreria de `rsample`, considera que tu función
+de estimación debe de regresar una tabla, `tibble`, con dos columnas `estimate`
+y `term`, donde se registra el valor estimado y nombre de tu estadistica. Por
+supuesto puedes utilizar otras funciones.
+
+**R. **
+
+```{r}
+
+```
+
+12. Reporta la dispersión de tu estimador en forma de intervalos con el método 
+más adecuado de los vistos en clase. 
+
+**R. **
+
+```{r}
+
+```
+
+
+13. Dado el estimador y los intervalos calculados arriba, escribe un breve resumen. 
+
+**R. **
