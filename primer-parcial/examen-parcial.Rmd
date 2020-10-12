@@ -1,6 +1,7 @@
 ---
 title: "Examen parcial - Otoño 2020"
-author: Alfredo Garbuno Iñigo
+author: Yalidt Díaz
+Bruno Gonzalez
 output: html_document
 ---
 
