@@ -4,6 +4,7 @@ author: Yalidt Díaz
 Bruno Gonzalez
 output: html_document
 ---
+Integrantes : Yalidt Díaz 141394 y Bruno Gonzalez 
 
 **Entrega:** Enviar la carpeta que incluya datos y codigo de solución a mas
 tardar el 19 de octubre antes de las 12:00pm (mediodia), por correo electrónico
@@ -39,7 +40,6 @@ knitr::opts_chunk$set(echo = TRUE, error = TRUE)
 ```
 
 
-  
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(patchwork)
@@ -66,15 +66,24 @@ posteriores a la guerra). E4 es el nivel más alto y E1 es el nivel más bajo.
 Describe esta relación usando tablas de porcentajes y de índices (o perfiles).
 
 ```{r}
-
-
+pilotos<- read.csv("/cloud/project/fundamentos-examen/primer-parcial/datos/tabla_nber_th.csv")
+glimpse(pilotos)
 ```
 
+```{r}
+#AYUDAAA#
+pilotos %>% select('Aptitude', 'Education') %>% 
+  table() %>% prop.table()
+```
 
 2. Describe la relación entre nivel de educación y ocupación ¿Qué concluyes de esta relación? ¿Cuáles dirías que son ocupaciones asociadas a educación alta y cuáles a educación baja?
 
 ```{r}
+pilotos %>% select('Ocup_group', 'Education') %>% 
+  table()
 
+#pilotos %>% pivot_wider(names_from = c(Education), values_from = Freq)
+#pilotos %>% pivot_wider(names_from = c(Aptitude), values_from = Freq)
 ```
 
 # Mini-proyecto (75 \% + 5\%)
@@ -106,30 +115,48 @@ truenos
 técnicas que hemos visto en clase. Haz resumens númericos del número de truenos 
 reportados. 
 
-**R. **
+**R. Resumen de 5 números y gráfica de apoyo visual (EDA)**
 
 ```{r}
+truenos$conteos %>% summary()
+```
 
+```{r}
+library(ggplot2)
+library(gridExtra)
+g1 <- ggplot(truenos, aes(conteos)) + 
+  geom_histogram(bins = 35) + ggtitle("Distribución del número de truenos")
+
+g2 <- ggplot(truenos, aes(conteos)) +
+  geom_boxplot() + ggtitle("Boxplot del número de truenos")
+
+grid.arrange(g1, g2) 
 ```
 
 2. Qué observaciones puedes hacer de este breve resumen? (Considera que la
 variable de interés son los conteos de truenos)
 
-**R. **
+** R. Lo primero que salta de este análisis es que hay datos bastante atípicos de 358(justamente es el valor máximo que toma esta variable), lo cual nos hace pensar si esta información fue capturada correctamente o si realmente se obtuvo ese valor en esa tormenta electrica. Aunado a esto, dado que esos outliers son muy elevados altera la media de los datos por su ponderación.
+
+Por otra parte, en cuanto a la distribución se observa un hueco entre el valor de aproximadamente 80 y 85, sin mencionar que la distribución esta claramente sesgada a la derecha. De igual manera, entre los valores de 50 hay una caída que se mantiene constante en el número de truenos  hasta aproximadamente el número 70, lo cual nos hace pensar sobre posibles asignaciones de este valor secuenciales uniformes en ese rango.
+
+Por último en el diagrama de caja y brazos, sin tomar en cuenta los datos atípicos, se podría decir que los datos son casi simétricos respecto a la media, aunque el brazo esta más alargado del lado derecho.**
 
 3. Ahora trataremos de validar un supuesto clásico, el supuesto de normalidad.
 Auxiliate de herramientas gráficas para explorar este supuesto y determinar si
 es razonable para nuestro conjunto de datos.
 
-**R. **
+**R. Grafica de Cauntiles**
 
 ```{r}
-
+qqnorm(truenos$conteos, main="Gráfica de cuantiles del numero de truenos", xlab="",
+         ylab="")
+qqline(truenos$conteos, col=2)
 ```
+**R. De acuerdo con el apoyo visual de las gráficas concluiríamos que no sería razonable utilizar un supuesto de normalidad, principalmente por el problema de los datos aberrantes que tenemos y porque en el centro la gráfica de cuantiles los puntos no se apegan mucho a la línea recta. De igual manera, el histograma parece tener una forma guassiana, pero tiene un comportamiento extraño entre los valores 50 y 70 de esta variable.
 
-```{r}
-
-```
+Probablemente si utilizaramos alguna otra herramienta numérica que nos ayude a determinar si se distribuye normalmente se podría cambiar de opinión dependiendo que tan conservadores seamos.
+**
 
 Posiblemente estén tentados a descartar los valores atípicos. Claramente tenemos
 un problema. Si quisiéramos hacer una prueba de hipótesis por medio de
@@ -143,13 +170,11 @@ por la variable `conteos` y asignamos una variable `orden` que asigna el lugar
 que dicho registro recibe.
 
 ```{r}
-
 truenos <- truenos %>% 
   arrange(conteos) %>% 
   mutate(orden = min_rank(conteos))
 
 truenos
-
 ```
 
 La idea es sencilla, si un grupo tiende a tener menores observaciones *la suma
@@ -160,17 +185,29 @@ comparar el observado con respecto a la distribución de referencia.
 4. Escribe el código adecuado para nuestro estadístico de prueba: la diferencia
 de la suma de órdenes.
 
-**R. **
+**R. Diferencia de la suma de órdenes **
 
 ```{r}
+diferencia <- truenos %>% group_by(aerosol) %>%
+  summarise(total_orden=sum(orden), .groups = 'drop') %>%
+  spread(key=aerosol, value = total_orden) %>%
+  mutate(dif=No-Si) %>% pull(dif)
 
+diferencia
 ```
 
 5. La distribución de referencia implica todas las asignaciones al azar de la 
 etiqueta que marca si la tormenta fue modificada artificialmente con aerosol. 
 Cuántas posibilidades existen para dicha distribución?
 
-**R. **
+```{r}
+permutacion = function(n, x) {
+  factorial(n) / factorial(n-x) / factorial(x)
+}
+permutacion(23,2)
+```
+
+**R. El total de posibilidades que se podrían obtener serían 253, porque hay 23 órdenes y 2 posibles valores (Si o No)**
 
 6. Por suerte, ya no estamos en los 70's y podemos auxiliarnos de simulación para
 construir la distribución de permutaciones. Genera las permutaciones correspondientes
@@ -179,17 +216,21 @@ por medio de simulación. Alrededor de $10^4$ serán mas que suficientes.
 **R. **
 
 ```{r, cache = T}
-
+#Si es con lineup? o mas bien con un rerun??
+permutaciones <- lineup(null_permute("aerosol"), 
+                        truenos, n = 10000)
 ```
-
-7. Calcula el estadístico de prueba para las permutaciones y grafica un histograma donde muestres
-el estadistico de prueba observado. 
-
-**R. **
 
 ```{r}
-
+permutaciones %>% group_by(.sample,aerosol) %>%
+  summarise(total_orden=sum(orden), .groups = 'drop') %>%
+  pivot_wider(names_from = aerosol, values_from = total_orden) %>%
+  mutate(dif=(No-Si))
 ```
+
+7. Calcula el estadístico de prueba para las permutaciones y grafica un histograma donde muestres el estadistico de prueba observado. 
+
+**R. **
 
 ```{r}
 
