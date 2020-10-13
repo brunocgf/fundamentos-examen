@@ -44,6 +44,7 @@ library(tidyverse)
 library(patchwork)
 library(nullabor)
 library(rsample)
+library(knitr)
 ```
 
 
@@ -65,15 +66,44 @@ posteriores a la guerra). E4 es el nivel más alto y E1 es el nivel más bajo.
 Describe esta relación usando tablas de porcentajes y de índices (o perfiles).
 
 ```{r}
-pilotos<- read.csv("/cloud/project/fundamentos-examen/primer-parcial/datos/tabla_nber_th.csv")
+pilotos<- read.csv("./datos/tabla_nber_th.csv")
 glimpse(pilotos)
 ```
 
-```{r}
-#AYUDAAA#
-pilotos %>% select('Aptitude', 'Education') %>% 
-  table() %>% prop.table()
+```{r 1.Tabla porcentajes}
+
+tabla_cruzada <- pilotos %>% 
+  group_by(Education, Aptitude) %>% 
+  summarise(Freq = sum(Freq)) %>% 
+  ungroup() %>% 
+  group_by(Education) %>%
+  mutate(prop = round(100*Freq/sum(Freq))) %>% 
+  select(-Freq) %>%
+  pivot_wider(names_from = Education, values_from = prop)
+
+tabla_cruzada
 ```
+
+```{r 1. Tabla perfiles}
+num_grups <- n_distinct(pilotos %>% select(Education))
+
+tabla <-  pilotos %>% 
+  group_by(Education, Aptitude) %>% 
+  summarise(Freq = sum(Freq)) %>% 
+  ungroup() %>% 
+  group_by(Education) %>% 
+  mutate(prop_aptitud = 100*Freq/sum(Freq)) %>% 
+  group_by(Aptitude) %>% 
+  mutate(prop_educacion = sum(prop_aptitud)/num_grups) %>% 
+  mutate(perfil = 100 * (prop_aptitud/prop_educacion-1))
+
+tabla_perfil <- tabla %>% 
+  select(Education, Aptitude, perfil, pct=prop_educacion) %>% 
+  pivot_wider(names_from=Education, values_from=perfil, values_fill=list(perfil=-100))
+
+tabla_perfil
+```
+
 
 2. Describe la relación entre nivel de educación y ocupación ¿Qué concluyes de esta relación? ¿Cuáles dirías que son ocupaciones asociadas a educación alta y cuáles a educación baja?
 
