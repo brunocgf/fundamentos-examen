@@ -4,7 +4,6 @@ author: Yalidt Díaz
 Bruno Gonzalez
 output: html_document
 ---
-Integrantes : Yalidt Díaz 141394 y Bruno Gonzalez 
 
 **Entrega:** Enviar la carpeta que incluya datos y codigo de solución a mas
 tardar el 19 de octubre antes de las 12:00pm (mediodia), por correo electrónico
@@ -105,6 +104,7 @@ recolección de datos se espera que el yoduro de plata disminuya el número de
 truenos que impacten la tierra.
 
 ```{r}
+#Lectura de los datos
 truenos <- read_csv('datos/tormentas.csv')
 truenos
 ```
@@ -122,8 +122,10 @@ truenos$conteos %>% summary()
 ```
 
 ```{r}
+#Librerias
 library(ggplot2)
 library(gridExtra)
+
 g1 <- ggplot(truenos, aes(conteos)) + 
   geom_histogram(bins = 35) + ggtitle("Distribución del número de truenos")
 
@@ -153,10 +155,10 @@ qqnorm(truenos$conteos, main="Gráfica de cuantiles del numero de truenos", xlab
          ylab="")
 qqline(truenos$conteos, col=2)
 ```
+
 **R. De acuerdo con el apoyo visual de las gráficas concluiríamos que no sería razonable utilizar un supuesto de normalidad, principalmente por el problema de los datos aberrantes que tenemos y porque en el centro la gráfica de cuantiles los puntos no se apegan mucho a la línea recta. De igual manera, el histograma parece tener una forma guassiana, pero tiene un comportamiento extraño entre los valores 50 y 70 de esta variable.
 
-Probablemente si utilizaramos alguna otra herramienta numérica que nos ayude a determinar si se distribuye normalmente se podría cambiar de opinión dependiendo que tan conservadores seamos.
-**
+Probablemente si utilizaramos alguna otra herramienta numérica que nos ayude a determinar si se distribuye normalmente se podría cambiar de opinión dependiendo que tan conservadores seamos.**
 
 Posiblemente estén tentados a descartar los valores atípicos. Claramente tenemos
 un problema. Si quisiéramos hacer una prueba de hipótesis por medio de
@@ -202,6 +204,14 @@ Cuántas posibilidades existen para dicha distribución?
 
 ```{r}
 permutacion = function(n, x) {
+  
+### Función que calcula el total de permutaciones de un conjunto de datos
+# Inputs:
+# n : escalar, Numero de de renglones en el dataset (en este caso órdenes)
+# x : escalar, Valores posible de la variable que se desea escoger
+# Outputs:
+# permutacion : escalar, que indica el número de permutaciones posibles
+  
   factorial(n) / factorial(n-x) / factorial(x)
 }
 permutacion(23,2)
@@ -216,42 +226,49 @@ por medio de simulación. Alrededor de $10^4$ serán mas que suficientes.
 **R. **
 
 ```{r, cache = T}
-#Si es con lineup? o mas bien con un rerun??
+#Cálculo de las simulaciones
+set.seed(4020) 
 permutaciones <- lineup(null_permute("aerosol"), 
                         truenos, n = 10000)
 ```
 
-```{r}
-permutaciones %>% group_by(.sample,aerosol) %>%
-  summarise(total_orden=sum(orden), .groups = 'drop') %>%
-  pivot_wider(names_from = aerosol, values_from = total_orden) %>%
-  mutate(dif=(No-Si))
-```
-
 7. Calcula el estadístico de prueba para las permutaciones y grafica un histograma donde muestres el estadistico de prueba observado. 
 
-**R. **
+```{r}
+#Cálculo de la diferencia observada en la simulación
+distribucion_ref <- permutaciones %>% group_by(.sample,aerosol) %>%
+  summarise(total_orden=sum(orden), .groups = 'drop') %>%
+  pivot_wider(names_from = aerosol, values_from = total_orden) %>%
+  mutate(dif=(No-Si)) 
+
+dif_observada <- distribucion_ref %>% summarise(prom_dif=mean(dif)) %>% pull(prom_dif)
+dif_observada
+```
+
+**R. Histograma de la distribución de diferencias con permutaciones con la diferencia observada (distribución de referencia) **
 
 ```{r}
-
+ggplot(distribucion_ref, aes(x = dif)) +
+  geom_histogram(binwidth = 7.5) + xlab("") + labs(subtitle = " ") +
+    geom_vline(xintercept = diferencia, colour = "red") +
+  annotate("text", x = diferencia, y = -15 , label = "diferencia observada", colour = "blue") +
+  ggtitle("Distribución nula o de referencia ")
 ```
 
 8. Calcula el *valor-p* de la hipótesis nula y escribe tu reporte sobre dicha prueba de hipótesis. 
 
-**R. **
-
 ```{r}
-
+dist_perm <- ecdf(distribucion_ref$dif)
+2 * min(dist_perm(diferencia), (1 - dist_perm(diferencia)))
 ```
 
-**5\% extra.** Acontinuación mostramos lo que una prueba vista en cursos clásicos de
-estadística arrojaría. Puedes interpretarla?
+**R. Nuestra Hipótesis Nula o H_0 era que no había diferencias entre las tormentas que tuvieron el aerosol y las que no (prueba de 2 colas). Si tomaramos como punto de corte del valor-p el .05, el valor-p obtenido (.0214) no rebasa el punto de corte, por lo que hay suficiente evidencia en contra de la H_0 y afimaríamos que si existe una diferencia entre los grupos de tormentas (que reciben o no reciben el aerosol)  **
+
+**5\% extra.** Acontinuación mostramos lo que una prueba vista en cursos clásicos de estadística arrojaría. ¿Puedes interpretarla?
 
 ```{r, warning = FALSE}
-
 wilcox.test(truenos$conteos~truenos$aerosol, 
             alternative="greater") 
-
 ```
 
 **R. **
