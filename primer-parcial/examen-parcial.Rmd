@@ -45,6 +45,7 @@ library(patchwork)
 library(nullabor)
 library(rsample)
 library(knitr)
+library(gridExtra)
 ```
 
 
@@ -62,7 +63,7 @@ más bajo).
 * Nivel de educación en 1969 (esta incluye años de escuela en 1943 más estudios
 posteriores a la guerra). E4 es el nivel más alto y E1 es el nivel más bajo.
 
-```{r}
+```{r 1.Datos}
 pilotos<- read.csv("./datos/tabla_nber_th.csv")
 glimpse(pilotos)
 ```
@@ -111,15 +112,46 @@ tabla_perfil %>%
 
 2. Describe la relación entre nivel de educación y ocupación ¿Qué concluyes de esta relación? ¿Cuáles dirías que son ocupaciones asociadas a educación alta y cuáles a educación baja?
 
-```{r 1.2.1}
+```{r 1.2.1 Datos}
 tabla_ocupacion <- pilotos %>% 
   group_by(Ocup_group, Education) %>% 
   summarise(Freq = sum(Freq)) %>% 
   group_by(Ocup_group) %>% 
-  mutate(Freq_ocup = Freq/sum(Freq)) %>% 
+  mutate(Freq_ocup = round(100*Freq/sum(Freq))) %>% 
   group_by(Education) %>% 
-  mutate(Freq_edu = Freq/sum(Freq))
+  mutate(Freq_edu = round(100*Freq/sum(Freq)))
 ```
+
+```{r 1.2.2 Barras}
+
+p1 <- tabla_ocupacion %>% 
+  ggplot() +
+  geom_col(aes(x=Ocup_group, y=Freq, fill=Education), position = "dodge") +
+  labs(x=element_blank(), y="Educación por ocupación") +
+  scale_fill_discrete(name="Educación") +
+  theme_light()
+
+p2 <- tabla_ocupacion %>% 
+  ggplot() +
+  geom_col(aes(x=Ocup_group, y=Freq_ocup, fill=Education), position = "dodge") +
+  labs(x=element_blank(), y="% Educación por ocupación") +
+  scale_fill_discrete(name="Educación") +
+  theme_light()
+
+grid.arrange(p1,p2)
+```
+
+```{r 1.2.3 Radar}
+tabla_ocupacion %>% 
+  ggplot(aes(x=Education, y = Freq_edu, col = Ocup_group, group = Ocup_group)) +
+  geom_point() +
+  geom_line() +
+  labs(x=element_blank(), y="% Ocupación por educación") +
+  scale_color_discrete(name=element_blank()) +
+  theme_light() +
+  theme(legend.position = "bottom")
+```
+
 
 # Mini-proyecto (75 \% + 5\%)
 
