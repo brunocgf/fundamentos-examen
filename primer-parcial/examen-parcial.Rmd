@@ -1,6 +1,6 @@
 ---
 title: "Examen parcial - Otoño 2020"
-author: Yalidt Díaz
+author: Yalidt Díaz y
 Bruno Gonzalez
 output: html_document
 ---
@@ -70,21 +70,21 @@ pilotos<- read.csv("./datos/tabla_nber_th.csv")
 glimpse(pilotos)
 ```
 
-```{r 1.Tabla porcentajes}
+```{r 1.1 Tabla porcentajes}
 
 tabla_cruzada <- pilotos %>% 
   group_by(Education, Aptitude) %>% 
   summarise(Freq = sum(Freq)) %>% 
   ungroup() %>% 
   group_by(Education) %>%
-  mutate(prop = round(100*Freq/sum(Freq))) %>% 
+  mutate(prop = round(100*Freq/sum(Freq),2)/100) %>% 
   select(-Freq) %>%
   pivot_wider(names_from = Education, values_from = prop)
 
-tabla_cruzada
+tabla_cruzada 
 ```
 
-```{r 1. Tabla perfiles}
+```{r 1.2 Tabla perfiles}
 num_grups <- n_distinct(pilotos %>% select(Education))
 
 tabla <-  pilotos %>% 
@@ -103,16 +103,13 @@ tabla_perfil <- tabla %>%
 
 tabla_perfil
 ```
+**R. **
+
 
 
 2. Describe la relación entre nivel de educación y ocupación ¿Qué concluyes de esta relación? ¿Cuáles dirías que son ocupaciones asociadas a educación alta y cuáles a educación baja?
 
 ```{r}
-pilotos %>% select('Ocup_group', 'Education') %>% 
-  table()
-
-#pilotos %>% pivot_wider(names_from = c(Education), values_from = Freq)
-#pilotos %>% pivot_wider(names_from = c(Aptitude), values_from = Freq)
 ```
 
 # Mini-proyecto (75 \% + 5\%)
@@ -142,16 +139,16 @@ truenos
 ## Análisis exploratorio y pruebas de hipótesis 
 
 1. Ahora haremos un breve EDA para determinar ciertos supuestos para aplicar las
-técnicas que hemos visto en clase. Haz resumens númericos del número de truenos 
+técnicas que hemos visto en clase. Haz resumenes númericos del número de truenos 
 reportados. 
 
-**R. Resumen de 5 números y gráfica de apoyo visual (EDA)**
 
-```{r}
+```{r 2.1 Resumen numérico}
 truenos$conteos %>% summary()
 ```
 
-```{r}
+```{r 2.2 EDA básico}
+
 #Librerias
 library(ggplot2)
 library(gridExtra)
@@ -168,27 +165,32 @@ grid.arrange(g1, g2)
 2. Qué observaciones puedes hacer de este breve resumen? (Considera que la
 variable de interés son los conteos de truenos)
 
-** R. Lo primero que salta de este análisis es que hay datos bastante atípicos de 358(justamente es el valor máximo que toma esta variable), lo cual nos hace pensar si esta información fue capturada correctamente o si realmente se obtuvo ese valor en esa tormenta electrica. Aunado a esto, dado que esos outliers son muy elevados altera la media de los datos por su ponderación.
+**R. Lo primero que salta de este análisis es que hay datos bastante atípicos de 358(justamente es el valor máximo 
+que toma esta variable), lo cual nos hace pensar si esta información fue capturada correctamente o si realmente se obtuvo ese valor en esa tormenta electrica. Aunado a esto, dado que esos outliers son muy elevados altera la media 
+de los datos por su ponderación.
 
 Por otra parte, en cuanto a la distribución se observa un hueco entre el valor de aproximadamente 80 y 85, sin mencionar que la distribución esta claramente sesgada a la derecha. De igual manera, entre los valores de 50 hay una caída que se mantiene constante en el número de truenos  hasta aproximadamente el número 70, lo cual nos hace pensar sobre posibles asignaciones de este valor secuenciales uniformes en ese rango.
 
-Por último en el diagrama de caja y brazos, sin tomar en cuenta los datos atípicos, se podría decir que los datos son casi simétricos respecto a la media, aunque el brazo esta más alargado del lado derecho.**
+Por último en el diagrama de caja y brazos, sin tomar en cuenta los datos atípicos, se podría decir
+que los datos son casi simétricos respecto a la media, aunque el brazo esta más alargado del lado derecho.**
 
 3. Ahora trataremos de validar un supuesto clásico, el supuesto de normalidad.
 Auxiliate de herramientas gráficas para explorar este supuesto y determinar si
 es razonable para nuestro conjunto de datos.
 
-**R. Grafica de Cauntiles**
 
-```{r}
+```{r 2.3 Grafica de Cauntiles}
+
 qqnorm(truenos$conteos, main="Gráfica de cuantiles del numero de truenos", xlab="",
          ylab="")
 qqline(truenos$conteos, col=2)
+
 ```
 
 **R. De acuerdo con el apoyo visual de las gráficas concluiríamos que no sería razonable utilizar un supuesto de normalidad, principalmente por el problema de los datos aberrantes que tenemos y porque en el centro la gráfica de cuantiles los puntos no se apegan mucho a la línea recta. De igual manera, el histograma parece tener una forma guassiana, pero tiene un comportamiento extraño entre los valores 50 y 70 de esta variable.
 
-Probablemente si utilizaramos alguna otra herramienta numérica que nos ayude a determinar si se distribuye normalmente se podría cambiar de opinión dependiendo que tan conservadores seamos.**
+Probablemente si utilizaramos alguna otra herramienta numérica que nos ayude a determinar si se distribuye 
+normalmente se podría cambiar de opinión dependiendo que tan conservadores seamos **
 
 Posiblemente estén tentados a descartar los valores atípicos. Claramente tenemos
 un problema. Si quisiéramos hacer una prueba de hipótesis por medio de
@@ -202,6 +204,7 @@ por la variable `conteos` y asignamos una variable `orden` que asigna el lugar
 que dicho registro recibe.
 
 ```{r}
+
 truenos <- truenos %>% 
   arrange(conteos) %>% 
   mutate(orden = min_rank(conteos))
@@ -217,22 +220,23 @@ comparar el observado con respecto a la distribución de referencia.
 4. Escribe el código adecuado para nuestro estadístico de prueba: la diferencia
 de la suma de órdenes.
 
-**R. Diferencia de la suma de órdenes **
+```{r 2.3 Diferencia observada}
 
-```{r}
-diferencia <- truenos %>% group_by(aerosol) %>%
-  summarise(total_orden=sum(orden), .groups = 'drop') %>%
-  spread(key=aerosol, value = total_orden) %>%
-  mutate(dif=No-Si) %>% pull(dif)
+diferencia_observada <- truenos %>% group_by(aerosol) %>%
+  summarise(suma_ordenes= sum(orden), .groups = 'drop') %>%
+  spread(key=aerosol, value = suma_ordenes) %>%
+  mutate(dif= No-Si) %>% pull(dif)
 
-diferencia
+diferencia_observada
 ```
+
+**R. Esta primera diferencia observada nos estaría indicando que las tormetas sometidas al aerosol tienen un menor número de truenos**
 
 5. La distribución de referencia implica todas las asignaciones al azar de la 
 etiqueta que marca si la tormenta fue modificada artificialmente con aerosol. 
-Cuántas posibilidades existen para dicha distribución?
+¿Cuántas posibilidades existen para dicha distribución?
 
-```{r}
+```{r 2.4 Función de permutaciones}
 permutacion = function(n, x) {
   
 ### Función que calcula el total de permutaciones de un conjunto de datos
@@ -253,9 +257,8 @@ permutacion(23,2)
 construir la distribución de permutaciones. Genera las permutaciones correspondientes
 por medio de simulación. Alrededor de $10^4$ serán mas que suficientes. 
 
-**R. **
+```{r 2.5 Permutaciones, cache = T }
 
-```{r, cache = T}
 #Cálculo de las simulaciones
 set.seed(4020) 
 permutaciones <- lineup(null_permute("aerosol"), 
@@ -264,44 +267,70 @@ permutaciones <- lineup(null_permute("aerosol"),
 
 7. Calcula el estadístico de prueba para las permutaciones y grafica un histograma donde muestres el estadistico de prueba observado. 
 
-```{r}
-#Cálculo de la diferencia observada en la simulación
+```{r 2.6 Diferencia en distribución de referencia (con permutaciones)}
+
+#Cálculo de la diferencias en la simulación
 distribucion_ref <- permutaciones %>% group_by(.sample,aerosol) %>%
-  summarise(total_orden=sum(orden), .groups = 'drop') %>%
-  pivot_wider(names_from = aerosol, values_from = total_orden) %>%
+  summarise(suma_ordenes=sum(orden), .groups = 'drop') %>%
+  pivot_wider(names_from = aerosol, values_from = suma_ordenes) %>%
   mutate(dif=(No-Si)) 
 
-dif_observada <- distribucion_ref %>% summarise(prom_dif=mean(dif)) %>% pull(prom_dif)
-dif_observada
 ```
 
-**R. Histograma de la distribución de diferencias con permutaciones con la diferencia observada (distribución de referencia) **
 
-```{r}
+```{r 2.7 Histograma de referencia con estadistico observado}
+
 ggplot(distribucion_ref, aes(x = dif)) +
-  geom_histogram(binwidth = 7.5) + xlab("") + labs(subtitle = " ") +
-    geom_vline(xintercept = diferencia, colour = "red") +
-  annotate("text", x = diferencia, y = -15 , label = "diferencia observada", colour = "blue") +
+  geom_histogram(binwidth = 9.5) + xlab("") + labs(subtitle = " ") +
+    geom_vline(xintercept = diferencia_observada, colour = "red") +
+  annotate("text", x = diferencia_observada, y = -15 , label = "diferencia observada", colour = "blue") +
   ggtitle("Distribución nula o de referencia ")
+
 ```
 
 8. Calcula el *valor-p* de la hipótesis nula y escribe tu reporte sobre dicha prueba de hipótesis. 
 
-```{r}
+```{r 2.8 Valor-p de la prueba de hipótesis}
+
 dist_perm <- ecdf(distribucion_ref$dif)
-2 * min(dist_perm(diferencia), (1 - dist_perm(diferencia)))
+#Nuestra prueba de hipótesis es de 2 colas porque H_0 : no hay diferencias y H_1 : si hay diferencia 
+2 * min(dist_perm(diferencia_observada), (1 - dist_perm(diferencia_observada)))
+
 ```
 
-**R. Nuestra Hipótesis Nula o H_0 era que no había diferencias entre las tormentas que tuvieron el aerosol y las que no (prueba de 2 colas). Si tomaramos como punto de corte del valor-p el .05, el valor-p obtenido (.0214) no rebasa el punto de corte, por lo que hay suficiente evidencia en contra de la H_0 y afimaríamos que si existe una diferencia entre los grupos de tormentas (que reciben o no reciben el aerosol)  **
+**R. Nuestra Hipótesis Nula H_0 era que no había diferencias entre las tormentas que tuvieron el aerosol y las que no (prueba de 2 colas):
 
-**5\% extra.** Acontinuación mostramos lo que una prueba vista en cursos clásicos de estadística arrojaría. ¿Puedes interpretarla?
 
-```{r, warning = FALSE}
+$$ H_0 : \sum({ordenes_{aerosol}}-{ordenes_{sinaerosol}})=0$$
+$$ H_1 : \sum({ordenes_{aerosol}}-{ordenes_{sinaerosol}}) \neq 0$$
+
+Dado que el valor-p obtenido fue de .0214, si tomaramos un $\alpha = .05$ nuestro valor es aún mas pequeño que este $\alpha$, con lo cual estaríamos rechazando $H_0$ y nos quedaríamos con $H_1$. Es decir existe evidencia de que hay diferencia entre los grupos de órdenes de tormentas cuando se pone el aerosol **
+
+
+```{r}
+aux <- distribucion_ref %>% gather(aerosol_sim , ordenes_sim, No:Si)
+
+g1 <- ggplot(aux, aes(x = aerosol_sim, y = ordenes_sim)) + 
+  geom_boxplot(outlier.size = 1, outlier.colour = "red", outlier.shape = 21) + 
+  coord_flip()
+
+g2 <- ggplot(truenos, aes(x = aerosol, y = orden)) + 
+  geom_boxplot(outlier.size = 1, outlier.colour = "red", outlier.shape = 21) +
+  coord_flip()
+
+grid.arrange(g1, g2) 
+```
+**R. Realizamos 2 gráficas de caja y brazos para ver como se comportaban los datos originales y los simulados, en ambos casos el número de ordenes se ve que cambia dependiendo si se aplica o no el aerosol, lo único curioso es que en las simulaciones resultó que las tormentas que no reciben el aerosol son las que tienen menor rank, sinembargo claramente se observa que hay diferencia entre los grupos**
+
+**5\% extra.** A continuación mostramos lo que una prueba vista en cursos clásicos de estadística arrojaría. ¿Puedes interpretarla?
+
+```{r 2.9 Wilcox Test, warning = FALSE}
+
 wilcox.test(truenos$conteos~truenos$aerosol, 
             alternative="greater") 
 ```
 
-**R. **
+**R. Esta prueba justamente calcula el valor-p y resueve la prueba de hipótesis sobre las órdenes que son el número de rank que tiene cada tormeta dependiendo del número de truenos que recibió. Nos indica un valor-p de .0156 porque esta considerando una prueba de hipótesis de 1 sola cola (justo por eso en el parámetro de la función de indica : alternative = "greater"), y este valor p es pequeño (de .0156), con lo cual al final nos indica la $H_1 > 0$ (la hipótesis alternativa es mayor a cero). De esta manera indica que la diferencia entre la suma de los rank(órdenes) es mayor a 0, por lo que si hay evidencia en contra de $H_0$  **
 
 # Distribución *bootstrap* para estimadores con cocientes
 
