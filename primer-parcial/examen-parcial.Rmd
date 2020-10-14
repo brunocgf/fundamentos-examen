@@ -301,8 +301,8 @@ dist_perm <- ecdf(distribucion_ref$dif)
 **R. Nuestra Hipótesis Nula H_0 era que no había diferencias entre las tormentas que tuvieron el aerosol y las que no (prueba de 2 colas):
 
 
-$$ H_0 : \sum({ordenes_{aerosol}}-{ordenes_{sinaerosol}})=0$$
-$$ H_1 : \sum({ordenes_{aerosol}}-{ordenes_{sinaerosol}}) \neq 0$$
+$$ H_0 : \sum({ordenes_{S}}-{ordenes_{N}})=0$$
+$$ H_1 : \sum({ordenes_{S}}-{ordenes_{N}}) \neq 0$$
 
 Dado que el valor-p obtenido fue de .0214, si tomaramos un $\alpha = .05$ nuestro valor es aún mas pequeño que este $\alpha$, con lo cual estaríamos rechazando $H_0$ y nos quedaríamos con $H_1$. Es decir existe evidencia de que hay diferencia entre los grupos de órdenes de tormentas cuando se pone el aerosol **
 
@@ -330,7 +330,7 @@ wilcox.test(truenos$conteos~truenos$aerosol,
             alternative="greater") 
 ```
 
-**R. Esta prueba justamente calcula el valor-p y resueve la prueba de hipótesis sobre las órdenes que son el número de rank que tiene cada tormeta dependiendo del número de truenos que recibió. Nos indica un valor-p de .0156 porque esta considerando una prueba de hipótesis de 1 sola cola (justo por eso en el parámetro de la función de indica : alternative = "greater"), y este valor p es pequeño (de .0156), con lo cual al final nos indica la $H_1 > 0$ (la hipótesis alternativa es mayor a cero). De esta manera indica que la diferencia entre la suma de los rank(órdenes) es mayor a 0, por lo que si hay evidencia en contra de $H_0$  **
+**R. Esta prueba justamente calcula el valor-p y resuelve la prueba de hipótesis sobre las órdenes que son el número de rank que tiene cada tormeta dependiendo del número de truenos que recibió. Nos indica un valor-p de .0156 porque esta considerando una prueba de hipótesis de 1 sola cola (justo por eso en el parámetro de la función de indica : alternative = "greater"), y este valor p es pequeño (de .0156), con lo cual al final nos indica la $H_1 > 0$ (la hipótesis alternativa es mayor a cero). De esta manera indica que la diferencia entre la suma de los rank(órdenes) es mayor a 0, por lo que si hay evidencia en contra de $H_0$.**
 
 # Distribución *bootstrap* para estimadores con cocientes
 
@@ -361,10 +361,42 @@ resultante?
 
 **R. **
 
-```{r}
+```{r 3.1 Lambda Function}
+lambda <- function(df){
+  data <- df %>% filter(aerosol == "Si") %>% select(conteos)
+  x <- as.matrix(data[1])
+  n <- length(x)
+  dist <- NULL
+  for(i in 1:(n-1)){
+    for(j in (i+1):n){
+      X_i <- x[i]
+      X_j <- x[j]
+      diferencia <- abs(X_i-X_j)
+    }
+    dist = append(dist,diferencia)
+  }
+  return(dist)
+}
 
-help(dist)
+prueba <- head(truenos,5)
+lambda(prueba)
+##AYUDA X_j se queda fijo, debería dar 2,5,1
 
+
+
+# data <- prueba %>% filter(aerosol == "Si") %>% select(conteos)
+# x <- as.matrix(data[1])
+# n <- length(x)
+# i <- 1
+# for(i in 1:n){
+#   for(j in (i+1):(n)){
+#     dist <- NULL
+#     X_i <- x[i]
+#     X_j <- x[j]
+#     diferencia <- abs(X_i-X_j)
+#     dist = append(dist,diferencia)
+#   }
+# }
 ```
 
 10. Cuál es tu conjetura de que la distribución de referencia tenga esa forma?
