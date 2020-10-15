@@ -173,7 +173,7 @@ truenos que impacten la tierra.
 
 ```{r}
 #Lectura de los datos
-truenos <- read_csv('datos/tormentas.csv')
+truenos <- read_csv('./datos/tormentas.csv')
 truenos
 ```
 
@@ -185,17 +185,13 @@ reportados.
 
 
 ```{r 2.1 Resumen numérico}
-truenos$conteos %>% summary()
+truenos %>% summary()
 ```
 
 ```{r 2.2 EDA básico}
 
-#Librerias
-library(ggplot2)
-library(gridExtra)
-
 g1 <- ggplot(truenos, aes(conteos)) + 
-  geom_histogram(bins = 35) + ggtitle("Distribución del número de truenos")
+  geom_histogram(bins = 25) + ggtitle("Distribución del número de truenos")
 
 g2 <- ggplot(truenos, aes(conteos)) +
   geom_boxplot() + ggtitle("Boxplot del número de truenos")
@@ -207,8 +203,7 @@ grid.arrange(g1, g2)
 variable de interés son los conteos de truenos)
 
 **R. Lo primero que salta de este análisis es que hay datos bastante atípicos de 358(justamente es el valor máximo 
-que toma esta variable), lo cual nos hace pensar si esta información fue capturada correctamente o si realmente se obtuvo ese valor en esa tormenta electrica. Aunado a esto, dado que esos outliers son muy elevados altera la media 
-de los datos por su ponderación.
+que toma esta variable), lo cual nos hace pensar si esta información fue capturada correctamente o si realmente se obtuvo ese valor en esa tormenta electrica. Aunado a esto, dado que esos outliers son muy elevados altera la media de los datos por su ponderación.
 
 Por otra parte, en cuanto a la distribución se observa un hueco entre el valor de aproximadamente 80 y 85, sin mencionar que la distribución esta claramente sesgada a la derecha. De igual manera, entre los valores de 50 hay una caída que se mantiene constante en el número de truenos  hasta aproximadamente el número 70, lo cual nos hace pensar sobre posibles asignaciones de este valor secuenciales uniformes en ese rango.
 
@@ -220,7 +215,7 @@ Auxiliate de herramientas gráficas para explorar este supuesto y determinar si
 es razonable para nuestro conjunto de datos.
 
 
-```{r 2.3 Grafica de Cauntiles}
+```{r 2.3 Grafica de Cuantiles}
 
 qqnorm(truenos$conteos, main="Gráfica de cuantiles del numero de truenos", xlab="",
          ylab="")
@@ -263,15 +258,16 @@ de la suma de órdenes.
 
 ```{r 2.3 Diferencia observada}
 
-diferencia_observada <- truenos %>% group_by(aerosol) %>%
+diferencia_observada <- truenos %>% 
+  group_by(aerosol) %>%
   summarise(suma_ordenes= sum(orden), .groups = 'drop') %>%
-  spread(key=aerosol, value = suma_ordenes) %>%
-  mutate(dif= No-Si) %>% pull(dif)
+  pivot_wider(names_from=aerosol, values_from = suma_ordenes) %>%
+  mutate(diferencia= No-Si) 
 
 diferencia_observada
 ```
 
-**R. Esta primera diferencia observada nos estaría indicando que las tormetas sometidas al aerosol tienen un menor número de truenos**
+**R. Esta primera diferencia observada nos estaría indicando que las tormentas sometidas al aerosol tienen un menor número de truenos**
 
 5. La distribución de referencia implica todas las asignaciones al azar de la 
 etiqueta que marca si la tormenta fue modificada artificialmente con aerosol. 
@@ -290,6 +286,10 @@ permutacion = function(n, x) {
   factorial(n) / factorial(n-x) / factorial(x)
 }
 permutacion(23,2)
+# si se debe mantener la proporcion de si y no
+permutacion(23,11)
+#si no se debe de mantener
+2^23
 ```
 
 **R. El total de posibilidades que se podrían obtener serían 253, porque hay 23 órdenes y 2 posibles valores (Si o No)**
@@ -311,7 +311,8 @@ permutaciones <- lineup(null_permute("aerosol"),
 ```{r 2.6 Diferencia en distribución de referencia (con permutaciones)}
 
 #Cálculo de la diferencias en la simulación
-distribucion_ref <- permutaciones %>% group_by(.sample,aerosol) %>%
+distribucion_ref <- permutaciones %>% 
+  group_by(.sample,aerosol) %>%
   summarise(suma_ordenes=sum(orden), .groups = 'drop') %>%
   pivot_wider(names_from = aerosol, values_from = suma_ordenes) %>%
   mutate(dif=(No-Si)) 
@@ -323,8 +324,12 @@ distribucion_ref <- permutaciones %>% group_by(.sample,aerosol) %>%
 
 ggplot(distribucion_ref, aes(x = dif)) +
   geom_histogram(binwidth = 9.5) + xlab("") + labs(subtitle = " ") +
-    geom_vline(xintercept = diferencia_observada, colour = "red") +
-  annotate("text", x = diferencia_observada, y = -15 , label = "diferencia observada", colour = "blue") +
+  geom_vline(xintercept = diferencia_observada$diferencia[1], colour = "red") +
+  annotate("text", 
+           x = diferencia_observada$diferencia[1], 
+           y = -15 , 
+           label = "diferencia observada", 
+           colour = "blue") +
   ggtitle("Distribución nula o de referencia ")
 
 ```
@@ -335,7 +340,7 @@ ggplot(distribucion_ref, aes(x = dif)) +
 
 dist_perm <- ecdf(distribucion_ref$dif)
 #Nuestra prueba de hipótesis es de 2 colas porque H_0 : no hay diferencias y H_1 : si hay diferencia 
-2 * min(dist_perm(diferencia_observada), (1 - dist_perm(diferencia_observada)))
+2 * min(dist_perm(diferencia_observada$diferencia[1]), (1 - dist_perm(diferencia_observada$diferencia[1])))
 
 ```
 
@@ -361,7 +366,9 @@ g2 <- ggplot(truenos, aes(x = aerosol, y = orden)) +
 
 grid.arrange(g1, g2) 
 ```
-**R. Realizamos 2 gráficas de caja y brazos para ver como se comportaban los datos originales y los simulados, en ambos casos el número de ordenes se ve que cambia dependiendo si se aplica o no el aerosol, lo único curioso es que en las simulaciones resultó que las tormentas que no reciben el aerosol son las que tienen menor rank, sinembargo claramente se observa que hay diferencia entre los grupos**
+**R. Realizamos 2 gráficas de caja y brazos para ver como se comportaban los datos originales y los simulados, en ambos casos el número de ordenes se ve que cambia dependiendo si se aplica o no el aerosol. lo único curioso es que en las simulaciones resultó que las tormentas que no reciben el aerosol son las que tienen menor rank, sinembargo claramente se observa que hay diferencia entre los grupos
+
+El cambio en el menor numero de rank responde justo al incluir alietoriedad, se difumina la diferencia, siendo consistente con la prueba de hipótesis de arriba**
 
 **5\% extra.** A continuación mostramos lo que una prueba vista en cursos clásicos de estadística arrojaría. ¿Puedes interpretarla?
 
@@ -369,6 +376,12 @@ grid.arrange(g1, g2)
 
 wilcox.test(truenos$conteos~truenos$aerosol, 
             alternative="greater") 
+```
+
+```{r 2.9 Wilcox Test, warning = FALSE}
+
+wilcox.test(truenos$conteos~truenos$aerosol, 
+            alternative="two.sided") 
 ```
 
 **R. Esta prueba justamente calcula el valor-p y resuelve la prueba de hipótesis sobre las órdenes que son el número de rank que tiene cada tormeta dependiendo del número de truenos que recibió. Nos indica un valor-p de .0156 porque esta considerando una prueba de hipótesis de 1 sola cola (justo por eso en el parámetro de la función de indica : alternative = "greater"), y este valor p es pequeño (de .0156), con lo cual al final nos indica la $H_1 > 0$ (la hipótesis alternativa es mayor a cero). De esta manera indica que la diferencia entre la suma de los rank(órdenes) es mayor a 0, por lo que si hay evidencia en contra de $H_0$.**
@@ -403,42 +416,38 @@ resultante?
 **R. **
 
 ```{r 3.1 Lambda Function}
-lambda <- function(df){
-  data <- df %>% filter(aerosol == "Si") %>% select(conteos)
-  x <- as.matrix(data[1])
-  n <- length(x)
-  dist <- NULL
-  for(i in 1:(n-1)){
-    for(j in (i+1):n){
-      X_i <- x[i]
-      X_j <- x[j]
-      diferencia <- abs(X_i-X_j)
-    }
-    dist = append(dist,diferencia)
-  }
-  return(dist)
+lambda <- function(df, val){
+  x <- df %>% filter(aerosol == val) %>% select(conteos)
+  n <- nrow(x)
+  d <- sum(dist(x))
+  return(2*d/(n*(n-1)))
 }
 
 prueba <- head(truenos,5)
-lambda(prueba)
-##AYUDA X_j se queda fijo, debería dar 2,5,1
+print(prueba)
+lambda(prueba,"Si")
+t <- lambda(prueba,"Si")
 
-
-
-# data <- prueba %>% filter(aerosol == "Si") %>% select(conteos)
-# x <- as.matrix(data[1])
-# n <- length(x)
-# i <- 1
-# for(i in 1:n){
-#   for(j in (i+1):(n)){
-#     dist <- NULL
-#     X_i <- x[i]
-#     X_j <- x[j]
-#     diferencia <- abs(X_i-X_j)
-#     dist = append(dist,diferencia)
-#   }
-# }
 ```
+
+```{r funcion_bootstrap}
+funcion_bootstrap <- function(df){
+  m <- sample_frac(df, replace = TRUE)
+  theta <- lambda(m,"Si")/lambda(m,"No")
+  return(theta)
+}
+```
+
+```{r simulaciones}
+simulaciones <- rerun(1000,funcion_bootstrap(truenos)) %>% flatten_dbl()
+```
+
+```{r histograma}
+tibble(x=simulaciones) %>% 
+  ggplot(aes(x=x)) +
+    geom_histogram()
+```
+
 
 10. Cuál es tu conjetura de que la distribución de referencia tenga esa forma?
 
