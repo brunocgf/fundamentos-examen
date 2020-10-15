@@ -434,27 +434,39 @@ $\theta_L = 1$.
 9. Escribe la función que calcule la estadística $\lambda_2$. Para esto
 sugerimos le heches un ojo a la función `dist`. Una vez que tengas esa función
 utilizala para realizar simulaciones como en los puntos anteriores y puedas
-explorar la distribución de referencia. Qué observas de la distribución
+explorar la distribución de referencia. ¿Qué observas de la distribución
 resultante?
 
-**R. **
-
 ```{r 3.1 Lambda Function}
+
 lambda <- function(df, val){
+  
+### Función que calcula el parámetro Lambda dado un conjunto de muestras pareadas
+# Inputs :
+# df - df que contiene las muestras
+# val - Parámetro que indica para que grupo se desea calcula lambda
+# Outputs :
+# lambda - parámetro que resulta de la siguiente fórmula una ves calculada la suma de las distancias : \lambda_2 = \frac{2}{n (n -1)} \sum_{i = 1}^{n-1} \sum_{j = i + 1}^n |x_i - x_j|
+  
   x <- df %>% filter(aerosol == val) %>% select(conteos)
   n <- nrow(x)
   d <- sum(dist(x))
-  return(2*d/(n*(n-1)))
+  lambda <- 2*d/(n*(n-1))
+  return(lambda)
 }
-
-prueba <- head(truenos,5)
-print(prueba)
-lambda(prueba,"Si")
-t <- lambda(prueba,"Si")
 ```
 
 ```{r 3.2 Funcion Bootstrap}
+
 funcion_bootstrap <- function(df){
+  
+### Función que calcula el las muestras bootstrap y sobre esas muestras se calcula el estimador theta que es el cociente de lambdas de cada grupo
+# Inputs :
+# df - df que contiene las muestras
+# Outputs :
+# lambda - parámetro que theta que se obtiene de la siguiente expresion :
+#\theta_L = \frac{\lambda_2^{S}}{\lambda_2^{N}}
+  
   m <- sample_frac(df, replace = TRUE)
   theta <- lambda(m,"Si")/lambda(m,"No")
   return(theta)
@@ -462,19 +474,23 @@ funcion_bootstrap <- function(df){
 ```
 
 ```{r 3.3 Simulaciones de boostrap}
+
+set.seed(4020)
 simulaciones <- rerun(1000,funcion_bootstrap(truenos)) %>% flatten_dbl()
 ```
 
 ```{r 3.4 Histograma de las simulaciones}
+
 tibble(x=simulaciones) %>% 
   ggplot(aes(x=x)) +
-    geom_histogram(bins = 30)
+    geom_histogram(bins = 35) + ggtitle("Distribución de referencia")
 ```
 
+**R. Se obtiene un histograma que esta sesgado a la derecha y que hay algunos datos atípicos para valores mayores a 1 de $\theta$, esto nos diría que hay muy pocas ocasiones en las que la $\lambda_s$ es mayor a $\lambda_n$ (hay mayor concentración de los datos en las tormentas que no se les aplica el aerosol). Por otra parte se observa que hay bastantes observaciones con $\theta$ entre aproximadamente .01 y .02 (aqui el cociente de las lambdas es muy bajo), por lo que en este rango de thetas hay mayor dispersión en las tormentas que se les aplica el aerosol. Por último se observa que la distribución parece ser bimodal, es decir que representa justamente los 2 grupos de tormentas**
 
 10. Cuál es tu conjetura de que la distribución de referencia tenga esa forma?
 
-**R. **
+**R. Que los grupos de tormentas estan separados y tienen distribuciones distintas, se ven claramente 2 modas en el histograma obtenido. Y como primer creencia se tendría que las thetas pequeñas son aquellas donde hay mayor dispersión en las tormentas sometidas al aerosol, y por el contrario las thetas entre .4 y .9 las tormetas que tienen mayor dispersión son las que no se someten al aerosol**
 
 En este caso hacer una prueba de hipótesis para la estadística de la
 $L-$dispersión por medio de permutaciones no es la mejor estrategia. Esto es por
