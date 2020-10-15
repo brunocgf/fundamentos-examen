@@ -86,6 +86,7 @@ tabla_cruzada
 ```
 
 ```{r 1.1.2 Tabla perfiles}
+
 num_grups <- n_distinct(pilotos %>% select(Education))
 
 tabla <-  pilotos %>% 
@@ -105,9 +106,28 @@ tabla_perfil <- tabla %>%
 tabla_perfil %>% 
   arrange(desc(E1)) %>% 
   select(-pct)
-```
-**R. **
 
+```
+```{r 1.1.3 Gráfica de perfiles: Educacion y Aptitudes}
+
+tabla_graf <- tabla_perfil %>%
+  ungroup %>%
+  mutate(Aptitude = fct_reorder(Aptitude, E1)) %>%  #ordenamos respecto a E1
+  select(-pct) %>%
+  pivot_longer(cols = -Aptitude, names_to = "Educacion", values_to = "perfil")
+
+g_perfil <- ggplot(tabla_graf,
+  aes(x = Aptitude, xend = Aptitude, y = perfil, yend = 0, group = Educacion)) +
+  geom_point(color="red") + geom_segment() + facet_wrap(~Educacion, nrow = 2) +
+  geom_hline(yintercept = 0 , colour = "gray")+ coord_flip() + theme_light()
+
+g_perfil
+```
+
+
+**R. En el caso de E1 y E2 (nivel más bajo de educación) se observa que hay una alta tasa de pilotos que tienen poco puntaje de aptitudes (aunque en la E1 esta tasa es mayor), de igual manera en estos 2 niveles de educación (E1 y E2) se obtienen altas tasas negativas de personas que hayan tenido un nivel de aptitud muy alto. Esto justamente confirma nuestra creencia inical de que las pilotos que no tienen un alto grado de Educación dificilmente tendrían un nivel alto en sus pruebas de aptitudes.
+
+Por otro lado en los niveles de Educación E3 y E4 la relación se voltea es decir observamos altas tasas de personas que tienen tienen niveles de aptitudes altos (A5 y A4), y por el contrario pocos perfiles de pilotos en esos niveles de educación con un resultado de aptitudes bajas.**
 
 
 2. Describe la relación entre nivel de educación y ocupación ¿Qué concluyes de esta relación? ¿Cuáles dirías que son ocupaciones asociadas a educación alta y cuáles a educación baja?
@@ -122,7 +142,7 @@ tabla_ocupacion <- pilotos %>%
   mutate(Freq_edu = round(100*Freq/sum(Freq)))
 ```
 
-```{r 1.2.2 Barras}
+```{r 1.2.2 Gráfica de Barras}
 
 p1 <- tabla_ocupacion %>% 
   ggplot() +
@@ -141,6 +161,8 @@ p2 <- tabla_ocupacion %>%
 grid.arrange(p1,p2)
 ```
 
+**R. De estas primera gráficas agrupadas por ocupación se observa que en las ocupaciones de "Salary-employed" y "Se-business" hay más varidad de grados de educación y que el nivel de educación que menos tiene representación en estas dos ocuapciones es E4 (nivel de mayor grado). Por otra parte en las ocupaciones de "SE-profesional" y "Teacher" hay gran disparidad en los niveles de educación, es decir muy pocas personas tienen bajos niveles de educación y las educaciones que tienen mayor participación  en estas ocupaciones son E3 y E4 (siendo E4 la que representa mayor proporción)**
+
 ```{r 1.2.3 Radar}
 tabla_ocupacion %>% 
   ggplot(aes(x=Education, y = Freq_edu, col = Ocup_group, group = Ocup_group)) +
@@ -152,6 +174,7 @@ tabla_ocupacion %>%
   theme(legend.position = "bottom")
 ```
 
+**R. En esta 2da gráfica se concluye que las ocupaciones que en general tienen un menor proporcion de educación son "SE-Profesional" y "Teacher", aunque tienen mayor educación en E4. De igual manera en general las ocupaciones que tienen en promedio mayor educación son "SE-business" y "Salary-employed", pero justamente tienen menor proporción de eduación alta (E4)**
 
 # Mini-proyecto (75 \% + 5\%)
 
@@ -188,7 +211,7 @@ reportados.
 truenos %>% summary()
 ```
 
-```{r 2.2 EDA básico}
+```{r 2.2 EDA básico univariado}
 
 g1 <- ggplot(truenos, aes(conteos)) + 
   geom_histogram(bins = 25) + ggtitle("Distribución del número de truenos")
@@ -372,19 +395,20 @@ El cambio en el menor numero de rank responde justo al incluir alietoriedad, se 
 
 **5\% extra.** A continuación mostramos lo que una prueba vista en cursos clásicos de estadística arrojaría. ¿Puedes interpretarla?
 
-```{r 2.9 Wilcox Test, warning = FALSE}
+```{r 2.9.1 Wilcox Test, warning = FALSE}
 
 wilcox.test(truenos$conteos~truenos$aerosol, 
             alternative="greater") 
 ```
+**R. Esta prueba justamente calcula el valor-p y resuelve la prueba de hipótesis sobre las órdenes que son el número de rank que tiene cada tormeta dependiendo del número de truenos que recibió. Nos indica un valor-p de .0156 porque esta considerando una prueba de hipótesis de 1 sola cola (justo por eso en el parámetro de la función de indica : alternative = "greater"), y este valor p es pequeño (de .0156), con lo cual al final nos indica la $H_1 > 0$ (la hipótesis alternativa es mayor a cero). De esta manera indica que la diferencia entre la suma de los rank(órdenes) es mayor a 0, por lo que si hay evidencia en contra de $H_0$.**
 
-```{r 2.9 Wilcox Test, warning = FALSE}
+```{r 2.9.2 Wilcox Test, warning = FALSE}
 
 wilcox.test(truenos$conteos~truenos$aerosol, 
             alternative="two.sided") 
 ```
+**R. Si realizaramos la prueba Wilcox con una prueba de 2 colas vemos que justamente el valor-p se mutiplica por 2 y es el doble del caso anterior**
 
-**R. Esta prueba justamente calcula el valor-p y resuelve la prueba de hipótesis sobre las órdenes que son el número de rank que tiene cada tormeta dependiendo del número de truenos que recibió. Nos indica un valor-p de .0156 porque esta considerando una prueba de hipótesis de 1 sola cola (justo por eso en el parámetro de la función de indica : alternative = "greater"), y este valor p es pequeño (de .0156), con lo cual al final nos indica la $H_1 > 0$ (la hipótesis alternativa es mayor a cero). De esta manera indica que la diferencia entre la suma de los rank(órdenes) es mayor a 0, por lo que si hay evidencia en contra de $H_0$.**
 
 # Distribución *bootstrap* para estimadores con cocientes
 
@@ -427,10 +451,9 @@ prueba <- head(truenos,5)
 print(prueba)
 lambda(prueba,"Si")
 t <- lambda(prueba,"Si")
-
 ```
 
-```{r funcion_bootstrap}
+```{r 3.2 Funcion Bootstrap}
 funcion_bootstrap <- function(df){
   m <- sample_frac(df, replace = TRUE)
   theta <- lambda(m,"Si")/lambda(m,"No")
@@ -438,14 +461,14 @@ funcion_bootstrap <- function(df){
 }
 ```
 
-```{r simulaciones}
+```{r 3.3 Simulaciones de boostrap}
 simulaciones <- rerun(1000,funcion_bootstrap(truenos)) %>% flatten_dbl()
 ```
 
-```{r histograma}
+```{r 3.4 Histograma de las simulaciones}
 tibble(x=simulaciones) %>% 
   ggplot(aes(x=x)) +
-    geom_histogram()
+    geom_histogram(bins = 30)
 ```
 
 
