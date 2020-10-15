@@ -308,14 +308,11 @@ permutacion = function(n, x) {
   
   factorial(n) / factorial(n-x) / factorial(x)
 }
-permutacion(23,2)
-# si se debe mantener la proporcion de si y no
 permutacion(23,11)
-#si no se debe de mantener
-2^23
+
 ```
 
-**R. El total de posibilidades que se podrían obtener serían 253, porque hay 23 órdenes y 2 posibles valores (Si o No)**
+**R. El total de posibilidades que se podrían obtener serían 1352078, porque hay 23 órdenes, las cuales se dividen en 12 (o 11) posibles valores Si (o No)**
 
 6. Por suerte, ya no estamos en los 70's y podemos auxiliarnos de simulación para
 construir la distribución de permutaciones. Genera las permutaciones correspondientes
@@ -456,6 +453,65 @@ lambda <- function(df, val){
 }
 ```
 
+Simulaciones
+
+
+```{r 2.5 Permutaciones, cache = T }
+
+#Cálculo de las simulaciones
+set.seed(4020) 
+ls <- permutaciones %>% 
+  group_by(.sample) %>% 
+  nest() %>% 
+  pull(data) %>% 
+  map_dbl(lambda, val="Si")
+
+ln <- permutaciones %>% 
+  group_by(.sample) %>% 
+  nest() %>% 
+  pull(data) %>% 
+  map_dbl(lambda, val="No")
+
+theta <- ls/ln
+
+```
+
+```{r}
+tibble(t=theta) %>% 
+  ggplot(aes(x=t)) +
+    geom_histogram(bins = 35) + ggtitle("Distribución de referencia")
+```
+
+
+
+
+**R. Se obtiene un histograma que esta sesgado a la derecha y que hay algunos datos atípicos para valores mayores a 1 de $\theta$, esto nos diría que hay muy pocas ocasiones en las que la $\lambda_s$ es mayor a $\lambda_n$ (hay mayor concentración de los datos en las tormentas que no se les aplica el aerosol). Por otra parte se observa que hay bastantes observaciones con $\theta$ entre aproximadamente .01 y .02 (aqui el cociente de las lambdas es muy bajo), por lo que en este rango de thetas hay mayor(menor no?) dispersión en las tormentas que se les aplica el aerosol. Por último se observa que la distribución parece ser bimodal, es decir que representa justamente los 2 grupos de tormentas**
+
+10. Cuál es tu conjetura de que la distribución de referencia tenga esa forma?
+
+**R. Que los grupos de tormentas estan separados y tienen distribuciones distintas, se ven claramente 2 modas en el histograma obtenido. Y como primer creencia se tendría que las thetas pequeñas son aquellas donde hay mayor dispersión en las tormentas sometidas (sin no?)al aerosol, y por el contrario las thetas entre .4 y .9 las tormetas que tienen mayor dispersión son las que no se someten al aerosol**
+
+En este caso hacer una prueba de hipótesis para la estadística de la
+$L-$dispersión por medio de permutaciones no es la mejor estrategia. Esto es por
+que la hipótesis nula alberga el supuesto de que **todos** los aspectos de la
+distribución de truenos que golpean la tierra son los mismos tanto para las
+tormentas modificadas por aerosoles y las que no lo son. En este caso,
+quisiéramos ser mas laxos y permitir algunas propiedades diferentes entre las
+dos distribuciones.
+
+Usaremos el método de *bootstrap* para calcular la distribución de remuestreo 
+de nuestra estadística observada. Como sabemos, el método de bootstrap nos informa
+de la dispersión de nuestra estadística de interés, que en este caso es la $L-$dispersión. 
+
+11. Escribe el código necesario para implementar un bootstrap no paramétrico.
+Recuerda que el remuestreo debe de respetar el proceso generador de datos.
+*Pista:* Sugerimos utilizar la libreria de `rsample`, considera que tu función
+de estimación debe de regresar una tabla, `tibble`, con dos columnas `estimate`
+y `term`, donde se registra el valor estimado y nombre de tu estadistica. Por
+supuesto puedes utilizar otras funciones.
+
+**R. **
+
 ```{r 3.2 Funcion Bootstrap}
 
 funcion_bootstrap <- function(df){
@@ -484,37 +540,6 @@ simulaciones <- rerun(1000,funcion_bootstrap(truenos)) %>% flatten_dbl()
 tibble(x=simulaciones) %>% 
   ggplot(aes(x=x)) +
     geom_histogram(bins = 35) + ggtitle("Distribución de referencia")
-```
-
-**R. Se obtiene un histograma que esta sesgado a la derecha y que hay algunos datos atípicos para valores mayores a 1 de $\theta$, esto nos diría que hay muy pocas ocasiones en las que la $\lambda_s$ es mayor a $\lambda_n$ (hay mayor concentración de los datos en las tormentas que no se les aplica el aerosol). Por otra parte se observa que hay bastantes observaciones con $\theta$ entre aproximadamente .01 y .02 (aqui el cociente de las lambdas es muy bajo), por lo que en este rango de thetas hay mayor dispersión en las tormentas que se les aplica el aerosol. Por último se observa que la distribución parece ser bimodal, es decir que representa justamente los 2 grupos de tormentas**
-
-10. Cuál es tu conjetura de que la distribución de referencia tenga esa forma?
-
-**R. Que los grupos de tormentas estan separados y tienen distribuciones distintas, se ven claramente 2 modas en el histograma obtenido. Y como primer creencia se tendría que las thetas pequeñas son aquellas donde hay mayor dispersión en las tormentas sometidas al aerosol, y por el contrario las thetas entre .4 y .9 las tormetas que tienen mayor dispersión son las que no se someten al aerosol**
-
-En este caso hacer una prueba de hipótesis para la estadística de la
-$L-$dispersión por medio de permutaciones no es la mejor estrategia. Esto es por
-que la hipótesis nula alberga el supuesto de que **todos** los aspectos de la
-distribución de truenos que golpean la tierra son los mismos tanto para las
-tormentas modificadas por aerosoles y las que no lo son. En este caso,
-quisiéramos ser mas laxos y permitir algunas propiedades diferentes entre las
-dos distribuciones.
-
-Usaremos el método de *bootstrap* para calcular la distribución de remuestreo 
-de nuestra estadística observada. Como sabemos, el método de bootstrap nos informa
-de la dispersión de nuestra estadística de interés, que en este caso es la $L-$dispersión. 
-
-11. Escribe el código necesario para implementar un bootstrap no paramétrico.
-Recuerda que el remuestreo debe de respetar el proceso generador de datos.
-*Pista:* Sugerimos utilizar la libreria de `rsample`, considera que tu función
-de estimación debe de regresar una tabla, `tibble`, con dos columnas `estimate`
-y `term`, donde se registra el valor estimado y nombre de tu estadistica. Por
-supuesto puedes utilizar otras funciones.
-
-**R. **
-
-```{r}
-
 ```
 
 12. Reporta la dispersión de tu estimador en forma de intervalos con el método 
