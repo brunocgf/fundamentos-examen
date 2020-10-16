@@ -483,11 +483,12 @@ tibble(t=theta) %>%
 ```
 
 
-**R. En este histograma la distribución de referencia fue sobre conteos (que es el número de truenos que tocan la tierra) y nos damos cuenta que hay 2 grupos o clusters completamente separados. Es decir vemos 2 distribuciones de cada grupo de tormentas (los que reciben el aerosol y los que no), es decir tienen caractetrísticas distintas esos 2 grupos.**
+**R. En este histograma la distribución de referencia fue sobre conteos (que es el número de truenos que tocan la tierra) y nos damos cuenta que hay 2 grupos o clusters completamente separados. Es decir vemos 2 distribuciones de cada grupo de tormentas (los que reciben el aerosol y los que no), y se observa que con permutaciones el primer grupo tiene una distribución muy picuda con thetas menores a 1, por otro lado la 2da distribución que se observa tiene thetas entre 2 y 6 aproximadamente (con sesgo a la derecha)**
 
 10. Cuál es tu conjetura de que la distribución de referencia tenga esa forma?
 
 **R. Que los grupos de tormentas estan separados y tienen distribuciones distintas, se ven claramente 2 modas en la gráfica del histograma obtenido. Y como primer creencia se tendría que las thetas pequeñas son aquellas donde hay mayor dispersión en las tormentas sometidas (sin no?)al aerosol, por el contrario  en el intervalo de thetas (2 - 6) las tormetas que tienen mayor dispersión son las que no se someten al aerosol. Esto justamente comprueba lo de la prueba de hipótesis anterior en donde rechazamos $H_0$ y considerabamos que efectivamente había una diferencia entre las tormetas que reciben o no el aerosol**
+
 
 En este caso hacer una prueba de hipótesis para la estadística de la
 $L-$dispersión por medio de permutaciones no es la mejor estrategia. Esto es por
@@ -537,10 +538,10 @@ simulaciones <- rerun(1000,funcion_bootstrap(truenos)) %>% flatten_dbl()
 
 tibble(x=simulaciones) %>% 
   ggplot(aes(x=x)) +
-    geom_histogram(bins = 35) + ggtitle("Distribución de referencia boostrap")
+    geom_histogram(bins = 40) + ggtitle("Distribución de referencia boostrap")
 ```
 
-**R. Se obtiene un histograma que esta sesgado a la derecha y que hay algunos datos atípicos para valores mayores a 1 de $\theta$, esto nos diría que hay muy pocas ocasiones en las que la $\lambda_s$ es mayor a $\lambda_n$ (hay mayor concentración de los datos en las tormentas que no se les aplica el aerosol). Por otra parte se observa que hay bastantes observaciones con $\theta$ entre aproximadamente .01 y .02 (aqui el cociente de las lambdas es muy bajo), por lo que en este rango de thetas hay menor dispersión en las tormentas que se les aplica el aerosol. Por último se observa que la distribución parece ser bimodal, es decir que representa justamente los 2 grupos de tormentas**
+**R. Se obtiene un histograma la escala de theta cambia a numeros de aproximadamente entre (0 y 1), además se observa que esta sesgado a la derecha y que hay algunos datos atípicos para valores mayores a 1 de $\theta$, esto nos diría que hay muy pocas ocasiones en las que la $\lambda_s$ es mayor a $\lambda_n$ (hay mayor concentración de los datos en las tormentas que no se les aplica el aerosol). Por otra parte se observa que hay bastantes observaciones con $\theta$ entre aproximadamente .01 y .02 (aqui el cociente de las lambdas es muy bajo), por lo que en este rango de thetas hay menor dispersión en las tormentas que se les aplica el aerosol. Por último se observa que la distribución parece ser bimodal, es decir que representa justamente los 2 grupos de tormentas**
 
 12. Reporta la dispersión de tu estimador en forma de intervalos con el método 
 más adecuado de los vistos en clase. 
@@ -559,7 +560,7 @@ estimador_boot <- function(split){
 # term (que es el nombre del estimador)
   truenos <- analysis(split)   # ¿Si va truenos o una muestra?
 
-  truenos %>% summarise(estimate = funcion_bootstrap(.)) %>%  mutate(term = "theta") 
+  truenos %>% summarise(estimate = funcion_bootstrap(.)) %>% mutate(term = "theta") 
 
 }
 
@@ -572,4 +573,8 @@ thetas_boot %>% int_pctl(boot_e, alpha= .05)
 
 13. Dado el estimador y los intervalos calculados arriba, escribe un breve resumen. 
 
-**R. **
+**R. Con una confianza del 95% se obtiene que el estimador theta con bootstrap esta entre (.05047 y 1.0424), es decir es un testimador pequeño y si recordamos el cálculo del estimador :$$\theta_L = \frac{\lambda_2^{S}}{\lambda_2^{N}},$$
+
+Donde  las $\lambda$s representan 2 cosas (dispersión y tambien de alguna manera considera el rank), entonces se puede concluir que para que este cociente sea un número pequeño puede ser por lo siguiente : numerador ($\lambda_2^{S}$) tiene un valor menor que el denominador ($\lambda_2^{N}$), en otras palabras $\lambda_2^{S}$ < $\lambda_2^{N}$, por lo que el grupo de tormetas que se somete a la aplicación del aerosol tiene menor dispersión que las que no tienen el aerosol. Esta conclusión es la que vemos en los histogramas de arriba (principalmente el de permitaciones), donde se ve que ambos grupos tienen distribuciones diferentes y la de las tormentas que tienen aplicado el aerosol esta bastante concentrada, casi no hay varianza, por el contrario las tormetas que no tienen aplicado este químico representan una distribución más aplanada con mayor varianza**
+
+**
