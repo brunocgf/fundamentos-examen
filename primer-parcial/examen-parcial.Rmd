@@ -133,6 +133,7 @@ Por otro lado en los niveles de Educación E3 y E4 la relación se voltea es dec
 2. Describe la relación entre nivel de educación y ocupación ¿Qué concluyes de esta relación? ¿Cuáles dirías que son ocupaciones asociadas a educación alta y cuáles a educación baja?
 
 ```{r 1.2.1 Datos}
+
 tabla_ocupacion <- pilotos %>% 
   group_by(Ocup_group, Education) %>% 
   summarise(Freq = sum(Freq)) %>% 
@@ -208,6 +209,7 @@ reportados.
 
 
 ```{r 2.1 Resumen numérico}
+
 truenos %>% summary()
 ```
 
@@ -243,7 +245,6 @@ es razonable para nuestro conjunto de datos.
 qqnorm(truenos$conteos, main="Gráfica de cuantiles del numero de truenos", xlab="",
          ylab="")
 qqline(truenos$conteos, col=2)
-
 ```
 
 **R. De acuerdo con el apoyo visual de las gráficas concluiríamos que no sería razonable utilizar un supuesto de normalidad, principalmente por el problema de los datos aberrantes que tenemos y porque en el centro la gráfica de cuantiles los puntos no se apegan mucho a la línea recta. De igual manera, el histograma parece tener una forma guassiana, pero tiene un comportamiento extraño entre los valores 50 y 70 de esta variable.
@@ -279,7 +280,7 @@ comparar el observado con respecto a la distribución de referencia.
 4. Escribe el código adecuado para nuestro estadístico de prueba: la diferencia
 de la suma de órdenes.
 
-```{r 2.3 Diferencia observada}
+```{r 2.4 Diferencia observada}
 
 diferencia_observada <- truenos %>% 
   group_by(aerosol) %>%
@@ -296,7 +297,8 @@ diferencia_observada
 etiqueta que marca si la tormenta fue modificada artificialmente con aerosol. 
 ¿Cuántas posibilidades existen para dicha distribución?
 
-```{r 2.4 Función de permutaciones}
+```{r 2.5 Función de permutaciones}
+
 permutacion = function(n, x) {
   
 ### Función que calcula el total de permutaciones de un conjunto de datos
@@ -309,7 +311,6 @@ permutacion = function(n, x) {
   factorial(n) / factorial(n-x) / factorial(x)
 }
 permutacion(23,11)
-
 ```
 
 **R. El total de posibilidades que se podrían obtener serían 1352078, porque hay 23 órdenes, las cuales se dividen en 12 (o 11) posibles valores Si (o No)**
@@ -318,7 +319,7 @@ permutacion(23,11)
 construir la distribución de permutaciones. Genera las permutaciones correspondientes
 por medio de simulación. Alrededor de $10^4$ serán mas que suficientes. 
 
-```{r 2.5 Permutaciones, cache = T }
+```{r 2.6 Permutaciones, cache = T }
 
 #Cálculo de las simulaciones
 set.seed(4020) 
@@ -328,7 +329,7 @@ permutaciones <- lineup(null_permute("aerosol"),
 
 7. Calcula el estadístico de prueba para las permutaciones y grafica un histograma donde muestres el estadistico de prueba observado. 
 
-```{r 2.6 Diferencia en distribución de referencia (con permutaciones)}
+```{r 2.7 Diferencia en distribución de referencia (con permutaciones)}
 
 #Cálculo de la diferencias en la simulación
 distribucion_ref <- permutaciones %>% 
@@ -340,7 +341,7 @@ distribucion_ref <- permutaciones %>%
 ```
 
 
-```{r 2.7 Histograma de referencia con estadistico observado}
+```{r 2.8 Histograma de referencia con estadistico observado}
 
 ggplot(distribucion_ref, aes(x = dif)) +
   geom_histogram(binwidth = 9.5) + xlab("") + labs(subtitle = " ") +
@@ -356,7 +357,7 @@ ggplot(distribucion_ref, aes(x = dif)) +
 
 8. Calcula el *valor-p* de la hipótesis nula y escribe tu reporte sobre dicha prueba de hipótesis. 
 
-```{r 2.8 Valor-p de la prueba de hipótesis}
+```{r 2.9 Valor-p de la prueba de hipótesis}
 
 dist_perm <- ecdf(distribucion_ref$dif)
 #Nuestra prueba de hipótesis es de 2 colas porque H_0 : no hay diferencias y H_1 : si hay diferencia 
@@ -453,10 +454,8 @@ lambda <- function(df, val){
 }
 ```
 
-Simulaciones
 
-
-```{r 2.5 Permutaciones, cache = T }
+```{r 3.2 Permutaciones, cache = T }
 
 #Cálculo de las simulaciones
 set.seed(4020) 
@@ -476,20 +475,19 @@ theta <- ls/ln
 
 ```
 
-```{r}
+```{r 3.3 Histograma Distribucion de referencia con permutaciones sobre conteos}
+
 tibble(t=theta) %>% 
   ggplot(aes(x=t)) +
-    geom_histogram(bins = 35) + ggtitle("Distribución de referencia")
+    geom_histogram(bins = 35) + ggtitle("Distribución de referencia permutaciones")
 ```
 
 
-
-
-**R. Se obtiene un histograma que esta sesgado a la derecha y que hay algunos datos atípicos para valores mayores a 1 de $\theta$, esto nos diría que hay muy pocas ocasiones en las que la $\lambda_s$ es mayor a $\lambda_n$ (hay mayor concentración de los datos en las tormentas que no se les aplica el aerosol). Por otra parte se observa que hay bastantes observaciones con $\theta$ entre aproximadamente .01 y .02 (aqui el cociente de las lambdas es muy bajo), por lo que en este rango de thetas hay mayor(menor no?) dispersión en las tormentas que se les aplica el aerosol. Por último se observa que la distribución parece ser bimodal, es decir que representa justamente los 2 grupos de tormentas**
+**R. En este histograma la distribución de referencia fue sobre conteos (que es el número de truenos que tocan la tierra) y nos damos cuenta que hay 2 grupos o clusters completamente separados. Es decir vemos 2 distribuciones de cada grupo de tormentas (los que reciben el aerosol y los que no), es decir tienen caractetrísticas distintas esos 2 grupos.**
 
 10. Cuál es tu conjetura de que la distribución de referencia tenga esa forma?
 
-**R. Que los grupos de tormentas estan separados y tienen distribuciones distintas, se ven claramente 2 modas en el histograma obtenido. Y como primer creencia se tendría que las thetas pequeñas son aquellas donde hay mayor dispersión en las tormentas sometidas (sin no?)al aerosol, y por el contrario las thetas entre .4 y .9 las tormetas que tienen mayor dispersión son las que no se someten al aerosol**
+**R. Que los grupos de tormentas estan separados y tienen distribuciones distintas, se ven claramente 2 modas en la gráfica del histograma obtenido. Y como primer creencia se tendría que las thetas pequeñas son aquellas donde hay mayor dispersión en las tormentas sometidas (sin no?)al aerosol, por el contrario  en el intervalo de thetas (2 - 6) las tormetas que tienen mayor dispersión son las que no se someten al aerosol. Esto justamente comprueba lo de la prueba de hipótesis anterior en donde rechazamos $H_0$ y considerabamos que efectivamente había una diferencia entre las tormetas que reciben o no el aerosol**
 
 En este caso hacer una prueba de hipótesis para la estadística de la
 $L-$dispersión por medio de permutaciones no es la mejor estrategia. Esto es por
@@ -512,7 +510,7 @@ supuesto puedes utilizar otras funciones.
 
 **R. **
 
-```{r 3.2 Funcion Bootstrap}
+```{r 3.4 Funcion Bootstrap}
 
 funcion_bootstrap <- function(df){
   
@@ -529,18 +527,20 @@ funcion_bootstrap <- function(df){
 }
 ```
 
-```{r 3.3 Simulaciones de boostrap}
+```{r 3.5 Simulaciones de boostrap}
 
 set.seed(4020)
 simulaciones <- rerun(1000,funcion_bootstrap(truenos)) %>% flatten_dbl()
 ```
 
-```{r 3.4 Histograma de las simulaciones}
+```{r 3.6 Histograma de las simulaciones}
 
 tibble(x=simulaciones) %>% 
   ggplot(aes(x=x)) +
-    geom_histogram(bins = 35) + ggtitle("Distribución de referencia")
+    geom_histogram(bins = 35) + ggtitle("Distribución de referencia boostrap")
 ```
+
+**R. Se obtiene un histograma que esta sesgado a la derecha y que hay algunos datos atípicos para valores mayores a 1 de $\theta$, esto nos diría que hay muy pocas ocasiones en las que la $\lambda_s$ es mayor a $\lambda_n$ (hay mayor concentración de los datos en las tormentas que no se les aplica el aerosol). Por otra parte se observa que hay bastantes observaciones con $\theta$ entre aproximadamente .01 y .02 (aqui el cociente de las lambdas es muy bajo), por lo que en este rango de thetas hay menor dispersión en las tormentas que se les aplica el aerosol. Por último se observa que la distribución parece ser bimodal, es decir que representa justamente los 2 grupos de tormentas**
 
 12. Reporta la dispersión de tu estimador en forma de intervalos con el método 
 más adecuado de los vistos en clase. 
@@ -548,6 +548,8 @@ más adecuado de los vistos en clase.
 **R. **
 
 ```{r}
+
+
 
 ```
 
