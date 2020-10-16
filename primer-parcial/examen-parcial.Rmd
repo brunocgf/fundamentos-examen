@@ -545,25 +545,28 @@ tibble(x=simulaciones) %>%
 12. Reporta la dispersión de tu estimador en forma de intervalos con el método 
 más adecuado de los vistos en clase. 
 
-**R. **
 
-```{r}
-# Considera que tu función
-# de estimación debe de regresar una tabla, `tibble`, con dos columnas `estimate`
-# y `term`, donde se registra el valor estimado y nombre de tu estadistica. Por
-# supuesto puedes utilizar otras funciones.
+```{r 3.7 Intervalos de theta}
+#Librería rsample
 library(rsample)
 
 estimador_boot <- function(split){
-  
-  truenos <- analysis(split) %>% 
-    mutate(estimate = funcion_bootstrap(.)) %>% mutate(term = aerosol)
+### Función que calcula el estimador theta sobre un el dataframe de truenos
+# Inputs :
+# split - permite dividir el dataframe en grupos con respecto al grupo (aerosol)
+# Outputs :
+# dataframe - regresa un dataframe con la columna estimate (la que calcula theta) y con la columna
+# term (que es el nombre del estimador)
+  truenos <- analysis(split)   # ¿Si va truenos o una muestra?
+
+  truenos %>% summarise(estimate = funcion_bootstrap(.)) %>%  mutate(term = "theta") 
 
 }
 
-thetas_boot <- bootstraps(truenos, 10) %>%
+thetas_boot <- bootstraps(truenos, strata = aerosol, 1000) %>%
   mutate(boot_e=map(splits, estimador_boot))
 
+#Calculo de intervalos al 95% del estimador theta
 thetas_boot %>% int_pctl(boot_e, alpha= .05)
 ```
 
