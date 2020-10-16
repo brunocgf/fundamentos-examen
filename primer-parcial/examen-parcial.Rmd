@@ -548,11 +548,24 @@ más adecuado de los vistos en clase.
 **R. **
 
 ```{r}
+# Considera que tu función
+# de estimación debe de regresar una tabla, `tibble`, con dos columnas `estimate`
+# y `term`, donde se registra el valor estimado y nombre de tu estadistica. Por
+# supuesto puedes utilizar otras funciones.
+library(rsample)
 
+estimador_boot <- function(split){
+  
+  truenos <- analysis(split) %>% 
+    mutate(estimate = funcion_bootstrap(.)) %>% mutate(term = aerosol)
 
+}
 
+thetas_boot <- bootstraps(truenos, 10) %>%
+  mutate(boot_e=map(splits, estimador_boot))
+
+thetas_boot %>% int_pctl(boot_e, alpha= .05)
 ```
-
 
 13. Dado el estimador y los intervalos calculados arriba, escribe un breve resumen. 
 
