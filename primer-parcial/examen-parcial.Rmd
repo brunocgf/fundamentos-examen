@@ -1,7 +1,8 @@
 ---
 title: "Examen parcial - Otoño 2020"
-author: Yalidt Díaz y
-Bruno Gonzalez
+author: 
+- "Yalidt Díaz - 141394"
+- "Bruno Gonzalez - 150370"
 output: html_document
 ---
 
@@ -39,7 +40,7 @@ knitr::opts_chunk$set(echo = TRUE, error = TRUE)
 ```
 
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r 0 Librerías, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(patchwork)
 library(nullabor)
@@ -71,7 +72,7 @@ glimpse(pilotos)
 1. ¿Qué relación existe entre aptitud (1943) y el nivel de educación (1969)?
 Describe esta relación usando tablas de porcentajes y de índices (o perfiles).
 
-```{r 1.1.1 Tabla porcentajes}
+```{r 1.1.1 Tabla porcentajes, message=FALSE}
 
 tabla_cruzada <- pilotos %>% 
   group_by(Education, Aptitude) %>% 
@@ -82,10 +83,12 @@ tabla_cruzada <- pilotos %>%
   select(-Freq) %>%
   pivot_wider(names_from = Education, values_from = prop)
 
-tabla_cruzada 
+kable(tabla_cruzada)
 ```
 
-```{r 1.1.2 Tabla perfiles}
+**R. La tabla de porcentajes (arriba) muestra la proporción de cada tipo de actitud para cada nivel de educación.**
+
+```{r 1.1.2 Tabla perfiles, message=FALSE}
 
 num_grups <- n_distinct(pilotos %>% select(Education))
 
@@ -103,12 +106,17 @@ tabla_perfil <- tabla %>%
   select(Education, Aptitude, perfil, pct=prop_educacion) %>% 
   pivot_wider(names_from=Education, values_from=perfil, values_fill=list(perfil=-100))
 
-tabla_perfil %>% 
+perfil <- tabla_perfil %>% 
   arrange(desc(E1)) %>% 
   select(-pct)
 
+kable(perfil)
+
 ```
-```{r 1.1.3 Gráfica de perfiles: Educacion y Aptitudes}
+
+**R. Arriba se muestra la table de perfiles.**
+
+```{r 1.1.3 Gráfica de perfiles: Educacion y Aptitudes, message=FALSE}
 
 tabla_graf <- tabla_perfil %>%
   ungroup %>%
@@ -125,14 +133,14 @@ g_perfil
 ```
 
 
-**R. En el caso de E1 y E2 (nivel más bajo de educación) se observa que hay una alta tasa de pilotos que tienen poco puntaje de aptitudes (aunque en la E1 esta tasa es mayor), de igual manera en estos 2 niveles de educación (E1 y E2) se obtienen altas tasas negativas de personas que hayan tenido un nivel de aptitud muy alto. Esto justamente confirma nuestra creencia inical de que las pilotos que no tienen un alto grado de Educación dificilmente tendrían un nivel alto en sus pruebas de aptitudes.
+**R. En el caso de E1 y E2 (nivel más bajo de educación) se observa que hay una alta tasa de pilotos que tienen poco puntaje de aptitudes (aunque en la E1 esta tasa es mayor), de igual manera en estos 2 niveles de educación (E1 y E2) se obtienen altas tasas negativas de personas que hayan tenido un nivel de aptitud muy alto. Esto justamente confirma nuestra creencia inical de que las pilotos que no tienen un alto grado de Educación dificilmente tendrían un nivel alto en sus pruebas de aptitudes.**
 
-Por otro lado en los niveles de Educación E3 y E4 la relación se voltea es decir observamos altas tasas de personas que tienen tienen niveles de aptitudes altos (A5 y A4), y por el contrario pocos perfiles de pilotos en esos niveles de educación con un resultado de aptitudes bajas.**
+**Por otro lado en los niveles de Educación E3 y E4 la relación se voltea es decir observamos altas tasas de personas que tienen tienen niveles de aptitudes altos (A5 y A4), y por el contrario pocos perfiles de pilotos en esos niveles de educación con un resultado de aptitudes bajas.**
 
 
 2. Describe la relación entre nivel de educación y ocupación ¿Qué concluyes de esta relación? ¿Cuáles dirías que son ocupaciones asociadas a educación alta y cuáles a educación baja?
 
-```{r 1.2.1 Datos}
+```{r 1.2.1 Datos, message=FALSE}
 
 tabla_ocupacion <- pilotos %>% 
   group_by(Ocup_group, Education) %>% 
@@ -162,9 +170,9 @@ p2 <- tabla_ocupacion %>%
 grid.arrange(p1,p2)
 ```
 
-**R. De estas primera gráficas agrupadas por ocupación se observa que en las ocupaciones de "Salary-employed" y "Se-business" hay más varidad de grados de educación y que el nivel de educación que menos tiene representación en estas dos ocuapciones es E4 (nivel de mayor grado). Por otra parte en las ocupaciones de "SE-profesional" y "Teacher" hay gran disparidad en los niveles de educación, es decir muy pocas personas tienen bajos niveles de educación y las educaciones que tienen mayor participación  en estas ocupaciones son E3 y E4 (siendo E4 la que representa mayor proporción)**
+**R. De estas primeras gráficas agrupadas por ocupación se observa que en las ocupaciones de "Salary-employed" y "Se-business" hay más variedad de grados de educación y que el nivel de educación que menos tiene representación en estas dos ocuapciones es E4 (nivel de mayor grado). Por otra parte en las ocupaciones de "SE-profesional" y "Teacher" hay gran disparidad en los niveles de educación, es decir muy pocas personas tienen bajos niveles de educación y las educaciones que tienen mayor participación  en estas ocupaciones son E3 y E4 (siendo E4 la que representa mayor proporción)**
 
-```{r 1.2.3 Radar}
+```{r 1.2.3 Radar, message=FALSE}
 tabla_ocupacion %>% 
   ggplot(aes(x=Education, y = Freq_edu, col = Ocup_group, group = Ocup_group)) +
   geom_point() +
@@ -175,7 +183,7 @@ tabla_ocupacion %>%
   theme(legend.position = "bottom")
 ```
 
-**R. En esta 2da gráfica se concluye que las ocupaciones que en general tienen un menor proporcion de educación son "SE-Profesional" y "Teacher", aunque tienen mayor educación en E4. De igual manera en general las ocupaciones que tienen en promedio mayor educación son "SE-business" y "Salary-employed", pero justamente tienen menor proporción de eduación alta (E4)**
+**R. En esta 2da gráfica se concluye que las ocupaciones que en general tienen un menor proporcion de educación son "SE-Profesional" y "Teacher", aunque tienen mayor educación en E4. De igual manera en general las ocupaciones que tienen en promedio mayor participación son "SE-business" y "Salary-employed", pero justamente tienen menor proporción de eduación alta (E4)**
 
 # Mini-proyecto (75 \% + 5\%)
 
@@ -195,7 +203,7 @@ tierra, y el indicador si la tormenta fue tratada con aerosoles o no. Previo a l
 recolección de datos se espera que el yoduro de plata disminuya el número de 
 truenos que impacten la tierra.
 
-```{r}
+```{r 2.0 Lectura de datos, message=FALSE}
 #Lectura de los datos
 truenos <- read_csv('./datos/tormentas.csv')
 truenos
@@ -203,9 +211,7 @@ truenos
 
 ## Análisis exploratorio y pruebas de hipótesis 
 
-1. Ahora haremos un breve EDA para determinar ciertos supuestos para aplicar las
-técnicas que hemos visto en clase. Haz resumenes númericos del número de truenos 
-reportados. 
+1. Ahora haremos un breve EDA para determinar ciertos supuestos para aplicar las técnicas que hemos visto en clase. Haz resumenes númericos del número de truenos reportados. 
 
 
 ```{r 2.1 Resumen numérico}
@@ -213,13 +219,17 @@ reportados.
 truenos %>% summary()
 ```
 
-```{r 2.2 EDA básico univariado}
+```{r 2.2 EDA básico univariado, message=FALSE}
 
 g1 <- ggplot(truenos, aes(conteos)) + 
-  geom_histogram(bins = 25) + ggtitle("Distribución del número de truenos")
+  geom_histogram(bins = 25) + 
+  ggtitle("Distribución del número de truenos") +
+  theme_light()
 
 g2 <- ggplot(truenos, aes(conteos)) +
-  geom_boxplot() + ggtitle("Boxplot del número de truenos")
+  geom_boxplot() + 
+  ggtitle("Boxplot del número de truenos") +
+  theme_light()
 
 grid.arrange(g1, g2) 
 ```
@@ -227,43 +237,32 @@ grid.arrange(g1, g2)
 2. Qué observaciones puedes hacer de este breve resumen? (Considera que la
 variable de interés son los conteos de truenos)
 
-**R. Lo primero que salta de este análisis es que hay datos bastante atípicos de 358(justamente es el valor máximo 
-que toma esta variable), lo cual nos hace pensar si esta información fue capturada correctamente o si realmente se obtuvo ese valor en esa tormenta electrica. Aunado a esto, dado que esos outliers son muy elevados altera la media de los datos por su ponderación.
+**R. Lo primero que salta de este análisis es que hay datos bastante atípicos de 358(justamente es el valor máximo que toma esta variable), lo cual nos hace pensar si esta información fue capturada correctamente o si realmente se obtuvo ese valor en esa tormenta electrica. Aunado a esto, dado que esos outliers son muy elevados altera la media de los datos por su ponderación.**
 
-Por otra parte, en cuanto a la distribución se observa un hueco entre el valor de aproximadamente 80 y 85, sin mencionar que la distribución esta claramente sesgada a la derecha. De igual manera, entre los valores de 50 hay una caída que se mantiene constante en el número de truenos  hasta aproximadamente el número 70, lo cual nos hace pensar sobre posibles asignaciones de este valor secuenciales uniformes en ese rango.
+**Por otra parte, en cuanto a la distribución se observa un hueco entre el valor de aproximadamente 80 y 85, sin mencionar que la distribución esta claramente sesgada a la derecha. De igual manera, entre los valores de 50 hay una caída que se mantiene constante en el número de truenos  hasta aproximadamente el número 70, lo cual nos hace pensar sobre posibles asignaciones de este valor secuenciales uniformes en ese rango.**
 
-Por último en el diagrama de caja y brazos, sin tomar en cuenta los datos atípicos, se podría decir
-que los datos son casi simétricos respecto a la media, aunque el brazo esta más alargado del lado derecho.**
+**Por último en el diagrama de caja y brazos, sin tomar en cuenta los datos atípicos, se podría decir que los datos son casi simétricos respecto a la media, aunque el brazo esta más alargado del lado derecho.**
 
-3. Ahora trataremos de validar un supuesto clásico, el supuesto de normalidad.
-Auxiliate de herramientas gráficas para explorar este supuesto y determinar si
-es razonable para nuestro conjunto de datos.
+3. Ahora trataremos de validar un supuesto clásico, el supuesto de normalidad. Auxiliate de herramientas gráficas para explorar este supuesto y determinar si es razonable para nuestro conjunto de datos.
 
 
 ```{r 2.3 Grafica de Cuantiles}
 
-qqnorm(truenos$conteos, main="Gráfica de cuantiles del numero de truenos", xlab="",
-         ylab="")
+qqnorm(truenos$conteos, 
+       main="Gráfica de cuantiles del numero de truenos", 
+       xlab="", ylab="")
 qqline(truenos$conteos, col=2)
 ```
 
-**R. De acuerdo con el apoyo visual de las gráficas concluiríamos que no sería razonable utilizar un supuesto de normalidad, principalmente por el problema de los datos aberrantes que tenemos y porque en el centro la gráfica de cuantiles los puntos no se apegan mucho a la línea recta. De igual manera, el histograma parece tener una forma guassiana, pero tiene un comportamiento extraño entre los valores 50 y 70 de esta variable.
+**R. De acuerdo con el apoyo visual de las gráficas concluiríamos que no sería razonable utilizar un supuesto de normalidad, principalmente por el problema de los datos aberrantes que tenemos y porque en el centro la gráfica de cuantiles los puntos no se apegan mucho a la línea recta. De igual manera, el histograma parece tener una forma guassiana, pero tiene un comportamiento extraño entre los valores 50 y 70 de esta variable. **
 
-Probablemente si utilizaramos alguna otra herramienta numérica que nos ayude a determinar si se distribuye 
-normalmente se podría cambiar de opinión dependiendo que tan conservadores seamos **
+**Probablemente si utilizaramos alguna otra herramienta numérica que nos ayude a determinar si se distribuye normalmente se podría cambiar de opinión dependiendo que tan conservadores seamos **
 
-Posiblemente estén tentados a descartar los valores atípicos. Claramente tenemos
-un problema. Si quisiéramos hacer una prueba de hipótesis por medio de
-diferencias en media, dicho valor atípico sesgaría nuestra distribución de
-referencia. Y el efecto sería catastrófico, valores grandes de nuestro estimador
-de prueba se verían como datos usuales bajo la distribución de referencias.
+Posiblemente estén tentados a descartar los valores atípicos. Claramente tenemos un problema. Si quisiéramos hacer una prueba de hipótesis por medio de diferencias en media, dicho valor atípico sesgaría nuestra distribución de referencia. Y el efecto sería catastrófico, valores grandes de nuestro estimador de prueba se verían como datos usuales bajo la distribución de referencias.
 
-Una alternativa para estos casos, que no vimos en clase, es hacer un prueba de
-diferencia en suma de órdenes *(sum of ranks).* Para esto ordenamos los datos
-por la variable `conteos` y asignamos una variable `orden` que asigna el lugar
-que dicho registro recibe.
+Una alternativa para estos casos, que no vimos en clase, es hacer un prueba de diferencia en suma de órdenes *(sum of ranks).* Para esto ordenamos los datos por la variable `conteos` y asignamos una variable `orden` que asigna el lugar que dicho registro recibe.
 
-```{r}
+```{r 2.3 Rank}
 
 truenos <- truenos %>% 
   arrange(conteos) %>% 
@@ -272,13 +271,9 @@ truenos <- truenos %>%
 truenos
 ```
 
-La idea es sencilla, si un grupo tiende a tener menores observaciones *la suma
-de sus órdenes* será menor que la suma de los órdenes del otro grupo. La
-diferencia de la suma de órdenes será nuestro estadístico de prueba. Y podremos
-comparar el observado con respecto a la distribución de referencia.
+La idea es sencilla, si un grupo tiende a tener menores observaciones *la suma de sus órdenes* será menor que la suma de los órdenes del otro grupo. La diferencia de la suma de órdenes será nuestro estadístico de prueba. Y podremos comparar el observado con respecto a la distribución de referencia.
 
-4. Escribe el código adecuado para nuestro estadístico de prueba: la diferencia
-de la suma de órdenes.
+4. Escribe el código adecuado para nuestro estadístico de prueba: la diferencia de la suma de órdenes.
 
 ```{r 2.4 Diferencia observada}
 
@@ -288,7 +283,7 @@ diferencia_observada <- truenos %>%
   pivot_wider(names_from=aerosol, values_from = suma_ordenes) %>%
   mutate(diferencia= No-Si) 
 
-diferencia_observada
+kable(diferencia_observada)
 ```
 
 **R. Esta primera diferencia observada nos estaría indicando que las tormentas sometidas al aerosol tienen un menor número de truenos**
@@ -313,14 +308,13 @@ permutacion = function(n, x) {
 permutacion(23,11)
 ```
 
-**R. El total de posibilidades que se podrían obtener serían 1352078, porque hay 23 órdenes, las cuales se dividen en 12 (o 11) posibles valores Si (o No)**
+**R. El total de posibilidades que se podrían obtener serían 1352078, porque hay 23 órdenes, las cuales se dividen en 12 (o 11) posibles valores Si (o No). Esta es la combinación de 12 tormentas sometidas con aerosol en 23 días**
 
 6. Por suerte, ya no estamos en los 70's y podemos auxiliarnos de simulación para
 construir la distribución de permutaciones. Genera las permutaciones correspondientes
 por medio de simulación. Alrededor de $10^4$ serán mas que suficientes. 
 
-```{r 2.6 Permutaciones, cache = T }
-
+```{r 2.6 Permutaciones, cache = T, message=TRUE}
 #Cálculo de las simulaciones
 set.seed(4020) 
 permutaciones <- lineup(null_permute("aerosol"), 
@@ -351,13 +345,14 @@ ggplot(distribucion_ref, aes(x = dif)) +
            y = -15 , 
            label = "diferencia observada", 
            colour = "blue") +
-  ggtitle("Distribución nula o de referencia ")
+  ggtitle("Distribución nula o de referencia ") +
+  theme_light()
 
 ```
 
 8. Calcula el *valor-p* de la hipótesis nula y escribe tu reporte sobre dicha prueba de hipótesis. 
 
-```{r 2.9 Valor-p de la prueba de hipótesis}
+```{r 2.9.1 Valor-p de la prueba de hipótesis}
 
 dist_perm <- ecdf(distribucion_ref$dif)
 #Nuestra prueba de hipótesis es de 2 colas porque H_0 : no hay diferencias y H_1 : si hay diferencia 
@@ -365,16 +360,15 @@ dist_perm <- ecdf(distribucion_ref$dif)
 
 ```
 
-**R. Nuestra Hipótesis Nula H_0 era que no había diferencias entre las tormentas que tuvieron el aerosol y las que no (prueba de 2 colas):
-
+**R. Nuestra Hipótesis Nula H_0 era que no había diferencias entre las tormentas que tuvieron el aerosol y las que no (prueba de 2 colas):**
 
 $$ H_0 : \sum({ordenes_{S}}-{ordenes_{N}})=0$$
 $$ H_1 : \sum({ordenes_{S}}-{ordenes_{N}}) \neq 0$$
 
-Dado que el valor-p obtenido fue de .0214, si tomaramos un $\alpha = .05$ nuestro valor es aún mas pequeño que este $\alpha$, con lo cual estaríamos rechazando $H_0$ y nos quedaríamos con $H_1$. Es decir existe evidencia de que hay diferencia entre los grupos de órdenes de tormentas cuando se pone el aerosol **
+**Dado que el valor-p obtenido fue de .0214, si tomaramos un $\alpha = .05$ nuestro valor es aún mas pequeño que este $\alpha$, con lo cual estaríamos rechazando $H_0$ y nos quedaríamos con $H_1$. Es decir existe evidencia de que hay diferencia entre los grupos de órdenes de tormentas cuando se pone el aerosol **
 
 
-```{r}
+```{r 2.9.2 Boxplots}
 aux <- distribucion_ref %>% gather(aerosol_sim , ordenes_sim, No:Si)
 
 g1 <- ggplot(aux, aes(x = aerosol_sim, y = ordenes_sim)) + 
@@ -387,6 +381,7 @@ g2 <- ggplot(truenos, aes(x = aerosol, y = orden)) +
 
 grid.arrange(g1, g2) 
 ```
+
 **R. Realizamos 2 gráficas de caja y brazos para ver como se comportaban los datos originales y los simulados, en ambos casos el número de ordenes se ve que cambia dependiendo si se aplica o no el aerosol. lo único curioso es que en las simulaciones resultó que las tormentas que no reciben el aerosol son las que tienen menor rank, sinembargo claramente se observa que hay diferencia entre los grupos
 
 El cambio en el menor numero de rank responde justo al incluir alietoriedad, se difumina la diferencia, siendo consistente con la prueba de hipótesis de arriba**
@@ -410,9 +405,7 @@ wilcox.test(truenos$conteos~truenos$aerosol,
 
 # Distribución *bootstrap* para estimadores con cocientes
 
-Supongamos ahora que para efectos del análisis la dispersión de los datos de las
-tormentas se pueden caracterizar por medio de la estadística de escala en L
-*(L-scale)* [Hoskin,
+Supongamos ahora que para efectos del análisis la dispersión de los datos de las tormentas se pueden caracterizar por medio de la estadística de escala en L *(L-scale)* [Hoskin,
 1990](https://www.jstor.org/stable/2345653?seq=1#metadata_info_tab_contents),
 $$ \lambda_2 = \frac{2}{n (n -1)} \sum_{i = 1}^{n-1} \sum_{j = i + 1}^n |x_i - x_j|,$$
 donde $\lambda_2$ caracteriza la mitad de la distancia promedio entre todos los
@@ -435,7 +428,7 @@ utilizala para realizar simulaciones como en los puntos anteriores y puedas
 explorar la distribución de referencia. ¿Qué observas de la distribución
 resultante?
 
-```{r 3.1 Lambda Function}
+```{r 3.9.1 Lambda Function}
 
 lambda <- function(df, val){
   
@@ -452,12 +445,16 @@ lambda <- function(df, val){
   lambda <- 2*d/(n*(n-1))
   return(lambda)
 }
+
+t <- lambda(truenos,"Si")/lambda(truenos,"No")
+t
+
 ```
 
+**R. El valor de theta para los datos es de $0.19$, indicando una mayor disperción en las tormentas que no fueron tratadas con aerosol.**
 
-```{r 3.2 Permutaciones, cache = T }
+```{r 3.9.2 Permutaciones, cache = T }
 
-#Cálculo de las simulaciones
 set.seed(4020) 
 ls <- permutaciones %>% 
   group_by(.sample) %>% 
@@ -475,11 +472,19 @@ theta <- ls/ln
 
 ```
 
-```{r 3.3 Histograma Distribucion de referencia con permutaciones sobre conteos}
+```{r 3.9.3 Histograma Distribucion de referencia con permutaciones sobre conteos}
 
 tibble(t=theta) %>% 
   ggplot(aes(x=t)) +
-    geom_histogram(bins = 35) + ggtitle("Distribución de referencia permutaciones")
+  geom_histogram(bins = 35) + 
+  geom_vline(xintercept = t, colour = "red") +
+  ggtitle("Distribución de referencia permutaciones") +
+    annotate("text", 
+           x = t, 
+           y = -15 , 
+           label = "theta", 
+           colour = "blue") +
+  theme_light()
 ```
 
 
@@ -487,31 +492,23 @@ tibble(t=theta) %>%
 
 10. Cuál es tu conjetura de que la distribución de referencia tenga esa forma?
 
-**R. Que los grupos de tormentas estan separados y tienen distribuciones distintas, se ven claramente 2 modas en la gráfica del histograma obtenido. Y como primer creencia se tendría que las thetas pequeñas son aquellas donde hay mayor dispersión en las tormentas sometidas (sin no?)al aerosol, por el contrario  en el intervalo de thetas (2 - 6) las tormetas que tienen mayor dispersión son las que no se someten al aerosol. Esto justamente comprueba lo de la prueba de hipótesis anterior en donde rechazamos $H_0$ y considerabamos que efectivamente había una diferencia entre las tormetas que reciben o no el aerosol**
+**R. Que los grupos de tormentas estan separados y tienen distribuciones distintas, se ven claramente 2 modas en la gráfica del histograma obtenido. Y como primer creencia se tendría que las thetas pequeñas son aquellas donde hay mayor dispersión en las tormentas sin el aerosol, por el contrario  en el intervalo de thetas (2 - 6) las tormetas que tienen mayor dispersión son las que se someten al aerosol. **
+
+**El valor de $\theta$ de la muestra original se encuentra el la distribución de la izquierda, separada del resto de las permitacions, de lo que se deriva un *p-value* pequeño. Esto justamente comprueba lo de la prueba de hipótesis anterior en donde rechazamos $H_0$ y considerabamos que efectivamente había una diferencia entre las tormetas que reciben o no el aerosol**
 
 
-En este caso hacer una prueba de hipótesis para la estadística de la
-$L-$dispersión por medio de permutaciones no es la mejor estrategia. Esto es por
-que la hipótesis nula alberga el supuesto de que **todos** los aspectos de la
-distribución de truenos que golpean la tierra son los mismos tanto para las
-tormentas modificadas por aerosoles y las que no lo son. En este caso,
-quisiéramos ser mas laxos y permitir algunas propiedades diferentes entre las
-dos distribuciones.
+En este caso hacer una prueba de hipótesis para la estadística de la $L-$dispersión por medio de permutaciones no es la mejor estrategia. Esto es por que la hipótesis nula alberga el supuesto de que **todos** los aspectos de la distribución de truenos que golpean la tierra son los mismos tanto para las tormentas modificadas por aerosoles y las que no lo son. En este caso, quisiéramos ser mas laxos y permitir algunas propiedades diferentes entre las dos distribuciones.
 
-Usaremos el método de *bootstrap* para calcular la distribución de remuestreo 
-de nuestra estadística observada. Como sabemos, el método de bootstrap nos informa
-de la dispersión de nuestra estadística de interés, que en este caso es la $L-$dispersión. 
+Usaremos el método de *bootstrap* para calcular la distribución de remuestreo de nuestra estadística observada. Como sabemos, el método de bootstrap nos informa de la dispersión de nuestra estadística de interés, que en este caso es la $L-$dispersión. 
 
-11. Escribe el código necesario para implementar un bootstrap no paramétrico.
-Recuerda que el remuestreo debe de respetar el proceso generador de datos.
-*Pista:* Sugerimos utilizar la libreria de `rsample`, considera que tu función
-de estimación debe de regresar una tabla, `tibble`, con dos columnas `estimate`
+11. Escribe el código necesario para implementar un bootstrap no paramétrico. Recuerda que el remuestreo debe de respetar el proceso generador de datos.
+*Pista:* Sugerimos utilizar la libreria de `rsample`, considera que tu función de estimación debe de regresar una tabla, `tibble`, con dos columnas `estimate`
 y `term`, donde se registra el valor estimado y nombre de tu estadistica. Por
 supuesto puedes utilizar otras funciones.
 
 **R. **
 
-```{r 3.4 Funcion Bootstrap}
+```{r 3.11 Funcion Bootstrap}
 
 funcion_bootstrap <- function(df){
   
@@ -528,26 +525,11 @@ funcion_bootstrap <- function(df){
 }
 ```
 
-```{r 3.5 Simulaciones de boostrap}
-
-set.seed(4020)
-simulaciones <- rerun(1000,funcion_bootstrap(truenos)) %>% flatten_dbl()
-```
-
-```{r 3.6 Histograma de las simulaciones}
-
-tibble(x=simulaciones) %>% 
-  ggplot(aes(x=x)) +
-    geom_histogram(bins = 40) + ggtitle("Distribución de referencia boostrap")
-```
-
-**R. Se obtiene un histograma la escala de theta cambia a numeros de aproximadamente entre (0 y 1), además se observa que esta sesgado a la derecha y que hay algunos datos atípicos para valores mayores a 1 de $\theta$, esto nos diría que hay muy pocas ocasiones en las que la $\lambda_s$ es mayor a $\lambda_n$ (hay mayor concentración de los datos en las tormentas que no se les aplica el aerosol). Por otra parte se observa que hay bastantes observaciones con $\theta$ entre aproximadamente .01 y .02 (aqui el cociente de las lambdas es muy bajo), por lo que en este rango de thetas hay menor dispersión en las tormentas que se les aplica el aerosol. Por último se observa que la distribución parece ser bimodal, es decir que representa justamente los 2 grupos de tormentas**
-
 12. Reporta la dispersión de tu estimador en forma de intervalos con el método 
 más adecuado de los vistos en clase. 
 
 
-```{r 3.7 Intervalos de theta}
+```{r 3.12 Simulacion}
 #Librería rsample
 library(rsample)
 
@@ -564,17 +546,34 @@ estimador_boot <- function(split){
 
 }
 
-thetas_boot <- bootstraps(truenos, strata = aerosol, 1000) %>%
+thetas_boot <- bootstraps(truenos, strata = aerosol, 5000) %>%
   mutate(boot_e=map(splits, estimador_boot))
+```
 
-#Calculo de intervalos al 95% del estimador theta
+
+```{r 3.12 Histograma de las simulacione, warning=FALSE}
+
+thetas_boot %>% 
+  select(-splits) %>% 
+  unnest() %>% 
+  select(term, estimate) %>% 
+  ggplot(aes(x=estimate)) +
+  geom_histogram(bins = 35) +
+  xlim(0,3) +
+  ggtitle("Distribución de referencia boostrap") +
+  theme_light()
+```
+
+**R. Se obtiene un histograma la escala de theta cambia a numeros de aproximadamente entre (0 y 1), además se observa que esta sesgado a la derecha y que hay algunos datos atípicos para valores mayores a 1 de $\theta$, esto nos diría que hay muy pocas ocasiones en las que la $\lambda_s$ es mayor a $\lambda_n$ (regularmente hay mayor concentración de los datos en las tormentas que  se les aplica el aerosol). Por otra parte se observa que hay bastantes observaciones con $\theta$ entre aproximadamente .01 y .02 (aqui el cociente de las lambdas es muy bajo), por lo que en este rango de thetas hay menor dispersión en las tormentas que se les aplica el aerosol. **
+
+```{r r 3.12 Intervalos de theta}
 thetas_boot %>% int_pctl(boot_e, alpha= .05)
 ```
 
+
 13. Dado el estimador y los intervalos calculados arriba, escribe un breve resumen. 
 
-**R. Con una confianza del 95% se obtiene que el estimador theta con bootstrap esta entre (.05047 y 1.0424), es decir es un testimador pequeño y si recordamos el cálculo del estimador :$$\theta_L = \frac{\lambda_2^{S}}{\lambda_2^{N}},$$
+**R. Con una confianza del 95% se obtiene que el estimador theta con bootstrap esta entre (.05047 y 1.0424), es decir es un testimador pequeño y si recordamos el cálculo del estimador :$$\theta_L = \frac{\lambda_2^{S}}{\lambda_2^{N}},$$ **
 
-Donde  las $\lambda$s representan 2 cosas (dispersión y tambien de alguna manera considera el rank), entonces se puede concluir que para que este cociente sea un número pequeño puede ser por lo siguiente : numerador ($\lambda_2^{S}$) tiene un valor menor que el denominador ($\lambda_2^{N}$), en otras palabras $\lambda_2^{S}$ < $\lambda_2^{N}$, por lo que el grupo de tormetas que se somete a la aplicación del aerosol tiene menor dispersión que las que no tienen el aerosol. Esta conclusión es la que vemos en los histogramas de arriba (principalmente el de permitaciones), donde se ve que ambos grupos tienen distribuciones diferentes y la de las tormentas que tienen aplicado el aerosol esta bastante concentrada, casi no hay varianza, por el contrario las tormetas que no tienen aplicado este químico representan una distribución más aplanada con mayor varianza**
+**Donde  las $\lambda$s representan 2 cosas (dispersión y tambien de alguna manera considera el rank), entonces se puede concluir que para que este cociente sea un número pequeño puede ser por lo siguiente : numerador ($\lambda_2^{S}$) tiene un valor menor que el denominador ($\lambda_2^{N}$), en otras palabras $\lambda_2^{S}$ < $\lambda_2^{N}$, por lo que el grupo de tormetas que se somete a la aplicación del aerosol tiene menor dispersión que las que no tienen el aerosol. Esta conclusión es la que vemos en los histogramas de arriba (principalmente el de permutaciones), donde se ve que ambos grupos tienen distribuciones diferentes y la de las tormentas que tienen aplicado el aerosol esta bastante concentrada, casi no hay varianza, por el contrario las tormetas que no tienen aplicado este químico representan una distribución más aplanada con mayor varianza**
 
-**
