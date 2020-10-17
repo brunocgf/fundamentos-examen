@@ -1,9 +1,11 @@
 ---
 title: "Examen parcial - Otoño 2020"
-author: 
-- "Yalidt Díaz - 141394"
-- "Bruno Gonzalez - 150370"
-output: html_document
+author:
+- Yalidt Díaz - 141394
+- Bruno Gonzalez - 150370
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 **Entrega:** Enviar la carpeta que incluya datos y codigo de solución a mas
