@@ -173,6 +173,7 @@ grid.arrange(p1,p2)
 **R. De estas primeras gráficas agrupadas por ocupación se observa que en las ocupaciones de "Salary-employed" y "Se-business" hay más variedad de grados de educación y que el nivel de educación que menos tiene representación en estas dos ocuapciones es E4 (nivel de mayor grado). Por otra parte en las ocupaciones de "SE-profesional" y "Teacher" hay gran disparidad en los niveles de educación, es decir muy pocas personas tienen bajos niveles de educación y las educaciones que tienen mayor participación  en estas ocupaciones son E3 y E4 (siendo E4 la que representa mayor proporción)**
 
 ```{r 1.2.3 Radar, message=FALSE}
+
 tabla_ocupacion %>% 
   ggplot(aes(x=Education, y = Freq_edu, col = Ocup_group, group = Ocup_group)) +
   geom_point() +
@@ -451,7 +452,7 @@ t
 
 ```
 
-**R. El valor de theta para los datos es de $0.19$, indicando una mayor disperción en las tormentas que no fueron tratadas con aerosol.**
+**R. El valor de theta para los datos es de $0.19$, indicando una mayor dispersión en las tormentas que no fueron tratadas con aerosol.**
 
 ```{r 3.9.2 Permutaciones, cache = T }
 
@@ -494,7 +495,7 @@ tibble(t=theta) %>%
 
 **R. Que los grupos de tormentas estan separados y tienen distribuciones distintas, se ven claramente 2 modas en la gráfica del histograma obtenido. Y como primer creencia se tendría que las thetas pequeñas son aquellas donde hay mayor dispersión en las tormentas sin el aerosol, por el contrario  en el intervalo de thetas (2 - 6) las tormetas que tienen mayor dispersión son las que se someten al aerosol. **
 
-**El valor de $\theta$ de la muestra original se encuentra el la distribución de la izquierda, separada del resto de las permitacions, de lo que se deriva un *p-value* pequeño. Esto justamente comprueba lo de la prueba de hipótesis anterior en donde rechazamos $H_0$ y considerabamos que efectivamente había una diferencia entre las tormetas que reciben o no el aerosol**
+**El valor de $\theta$ de la muestra original se encuentra el la distribución de la izquierda, separada del resto de las permutacions, de lo que se deriva un *p-value* pequeño. Esto justamente comprueba lo de la prueba de hipótesis anterior en donde rechazamos $H_0$ y considerabamos que efectivamente había una diferencia entre las tormetas que reciben o no el aerosol**
 
 
 En este caso hacer una prueba de hipótesis para la estadística de la $L-$dispersión por medio de permutaciones no es la mejor estrategia. Esto es por que la hipótesis nula alberga el supuesto de que **todos** los aspectos de la distribución de truenos que golpean la tierra son los mismos tanto para las tormentas modificadas por aerosoles y las que no lo son. En este caso, quisiéramos ser mas laxos y permitir algunas propiedades diferentes entre las dos distribuciones.
@@ -540,12 +541,13 @@ estimador_boot <- function(split){
 # Outputs :
 # dataframe - regresa un dataframe con la columna estimate (la que calcula theta) y con la columna
 # term (que es el nombre del estimador)
-  truenos <- analysis(split)   # ¿Si va truenos o una muestra?
+  truenos <- analysis(split)  
 
   truenos %>% summarise(estimate = funcion_bootstrap(.)) %>% mutate(term = "theta") 
 
 }
 
+set.seed(4020)
 thetas_boot <- bootstraps(truenos, strata = aerosol, 5000) %>%
   mutate(boot_e=map(splits, estimador_boot))
 ```
@@ -559,8 +561,14 @@ thetas_boot %>%
   select(term, estimate) %>% 
   ggplot(aes(x=estimate)) +
   geom_histogram(bins = 35) +
-  xlim(0,3) +
-  ggtitle("Distribución de referencia boostrap") +
+  xlim(0,3) + xlab("theta") +
+  ggtitle("Distribución de referencia boostrap") + 
+  geom_vline(xintercept = t, colour = "red") +
+  annotate("text", 
+           x = t, 
+           y = -18 , 
+           label = "theta", 
+           colour = "blue") +
   theme_light()
 ```
 
@@ -570,10 +578,9 @@ thetas_boot %>%
 thetas_boot %>% int_pctl(boot_e, alpha= .05)
 ```
 
-
 13. Dado el estimador y los intervalos calculados arriba, escribe un breve resumen. 
 
-**R. Con una confianza del 95% se obtiene que el estimador theta con bootstrap esta entre (.05047 y 1.0424), es decir es un testimador pequeño y si recordamos el cálculo del estimador :$$\theta_L = \frac{\lambda_2^{S}}{\lambda_2^{N}},$$ **
+**R. Con una confianza del 95% se obtiene que el estimador theta con bootstrap esta entre (.0516 y 1.0320), es decir es un testimador pequeño y si recordamos el cálculo del estimador :$$\theta_L = \frac{\lambda_2^{S}}{\lambda_2^{N}},$$ **
 
 **Donde  las $\lambda$s representan 2 cosas (dispersión y tambien de alguna manera considera el rank), entonces se puede concluir que para que este cociente sea un número pequeño puede ser por lo siguiente : numerador ($\lambda_2^{S}$) tiene un valor menor que el denominador ($\lambda_2^{N}$), en otras palabras $\lambda_2^{S}$ < $\lambda_2^{N}$, por lo que el grupo de tormetas que se somete a la aplicación del aerosol tiene menor dispersión que las que no tienen el aerosol. Esta conclusión es la que vemos en los histogramas de arriba (principalmente el de permutaciones), donde se ve que ambos grupos tienen distribuciones diferentes y la de las tormentas que tienen aplicado el aerosol esta bastante concentrada, casi no hay varianza, por el contrario las tormetas que no tienen aplicado este químico representan una distribución más aplanada con mayor varianza**
 
