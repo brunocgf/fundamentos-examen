@@ -2,8 +2,8 @@
 title: "Examen final - Otoño 2020"
 author: "Alfredo Garbuno Iñigo"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 **Entrega:** Enviar la carpeta que el codigo de solución (.Rmd y funciones
