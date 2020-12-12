@@ -95,6 +95,29 @@ $$\mathbb{E}[\theta] = \frac\alpha\beta, \qquad  \mathbb{V}[\theta] = \frac{\alp
 
 **Pregunta 1)** Para una muestra $X_1, \ldots, X_n \overset{iid}{\sim} \textsf{Poisson}(\theta),$ determina la distribución posterior de $\theta,$ y calcula media y varianza de la distribución posterior. ¿Podríamos escribir la media posterior como un promedio ponderado entre datos e información previa? ¿Cómo interpretas los hiper-parámetros $(\alpha, \beta)?$
 
+$$
+\begin{align}
+\Pi (\theta \mid x_1 , \dots, x_n) 
+&\propto \Pi (x_1, \dots, x_n \mid \theta) \cdot \Pi (\theta) \\
+&\propto \prod_i{\Pi(x_i \mid \theta)} \cdot \Pi(\theta) \\
+&\propto \prod_i{\frac{\theta^{x_i} e^{-\theta}}{x_i!}} \cdot \theta^{\alpha-1}e^{-\beta \theta} \\
+&\propto \frac{\theta^{\sum{x_i}}e^{-n\theta}}{\prod{x_i!}} \cdot \theta^{\alpha-1}e^{-\beta \theta} \\
+&\propto \theta^{\alpha + \sum{x_i} - 1}e^{-\theta(\beta + n)}
+\end{align}
+$$
+De lo anterior se puede ver que 
+
+$$
+\Pi (\theta \mid x_1 , \dots, x_n)\sim Gamma(\alpha + \sum{x_i}, \beta + n)
+$$
+Así,
+
+$$
+E[\theta \mid x_1 , \dots, x_n] = \frac{\alpha + \sum{x_i}}{\beta + n} \\
+Var[\theta \mid x_1 , \dots, x_n] = \frac{\alpha + \sum{x_i}}{(\beta + n)^2} 
+$$
+Sí se puede ver como un promedio entre los datos y el parámetro $\alpha$. Entre más datos sean más peso tendrán en la posterior. En cambio si los datos $n \to 0$, la posterior será igual a la distribución a priori.
+
 ---
 
 Otra variable aleatoria de conteo relevante es la **Binomial Negativa.** Esta distribución sirve para modelar el número de éxitos en una secuencia de experimentos Bernoulli antes de encontrar un número específico de fracasos. 
