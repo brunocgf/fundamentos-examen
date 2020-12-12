@@ -434,17 +434,61 @@ Var[\theta \mid x_1 , \dots, x_n] = \frac{\alpha + \sum{x_i}}{(\beta + n)^2}
 <p>Nota que <span class="math display">\[{\alpha + k -1 \choose k} = {\alpha + k -1 \choose \alpha -1},\]</span> es decir, el número de formas que puedes acomodar <span class="math inline">\(\alpha - 1\)</span> fracasos es igual al número de formas que puedes acomodar <span class="math inline">\(k\)</span> éxitos cuando realizaste <span class="math inline">\(\alpha + k-1\)</span> experimentos y todos los experimentos son independientes. Por otro lado, la definición es <span class="math display">\[{\alpha + k -1 \choose k} = \frac{(\alpha + k - 1)!}{k! \, (\alpha - 1)!}.\]</span> donde <span class="math inline">\(k! = k \times k-1 \times k-2 \times \cdots \times 1,\)</span> y la función Gamma satisface <span class="math display">\[\Gamma(\alpha) = (\alpha - 1)!.\]</span></p>
 <hr />
 <p><strong>Pregunta 2)</strong> Bajo el modelo conjugado que escribiste en la pregunta 1, calcula la <strong>distribución predictiva previa</strong> para una observación Poisson. Es decir, calcula <span class="math display">\[p(y) = \int \textsf{Poisson}(y \,| \,\theta) \textsf{Gamma}(\theta \, | \, \alpha, \beta) \, \text{d}\theta.\]</span></p>
+<p><span class="math display">\[
+\begin{align}
+p(y) &amp;= \int_0^{\infty} \frac{\theta^y e^{-\theta}}{y!} \cdot
+\frac{\beta^\alpha \theta^{\alpha-1} e^{-\beta \theta}}{\Gamma(\alpha)} d\theta \\
+&amp;= \frac{\beta^\alpha}{\Gamma(\alpha)y!} 
+\int_0^\infty\theta^{y+\alpha -1}e^{-\theta(\beta +1)}d\theta
+\end{align}
+\]</span> Sabemos que: <span class="math display">\[ \Gamma(z) = \int_0^\infty t^{z-1}e^{-t}dt\]</span> Entonces si:</p>
+<p><span class="math display">\[
+t = \theta(\beta +1)\\
+\Rightarrow \theta = \frac{t}{\beta +1} \\
+d\theta = \frac{1}{\beta +1}dt
+\]</span> Así: <span class="math display">\[
+\begin{align}
+&amp;= \frac{\beta^\alpha}{\Gamma(\alpha)y!} 
+\int_0^\infty\frac{t}{\beta +1}^{y+\alpha -1}e^{-t} \frac{1}{\beta +1}dt \\
+&amp;= \frac{\beta^\alpha}{\Gamma(\alpha)y!}\cdot\frac{1}{(\beta+1)^{y+\alpha}} \int_0^\infty t^{y+\alpha -1}e^{-t}dt \\
+&amp;= \frac{\beta^\alpha}{\Gamma(\alpha)y!}\cdot\frac{1}{(\beta+1)^{y+\alpha}} \Gamma(y+\alpha) \\
+&amp;= \frac{\Gamma(y+\alpha)}{\Gamma(\alpha)y!}  \frac{\beta^\alpha}{(\beta+1)^{y+\alpha}} \\
+&amp;=\frac{(y+\alpha-1)!}{(\alpha-1)!y!} \left(\frac{\beta}{\beta+1}\right)^\alpha \left(\frac{1}{\beta+1}\right)^y \\
+&amp;=\binom{y+\alpha-1}{y} \left(\frac{\beta}{\beta+1}\right)^\alpha \left(\frac{1}{\beta+1}\right)^y
+\end{align}
+\]</span></p>
 <p>Verifica tu cálculo utilizando las reglas probabilidad condicional. En especifico, utiliza</p>
-<p><span class="math display">\[ p(y) = \frac{p(y|\theta)p(\theta)}{p(\theta|y)}.\]</span></p>
-<p>¿Qué distribución marginal tiene <span class="math inline">\(y\)</span> bajo el modelo conjugado?</p>
+<p><span class="math display">\[ p(y) = \frac{p(y|\theta)p(\theta)}{p(\theta|y)}.\]</span> Tenemos que:</p>
+<p><span class="math display">\[
+\begin{align}
+p(y) &amp;= \frac{ \frac{\theta^y e^{-\theta}}{y!} \frac{\beta^\alpha\theta^{\alpha-1}e^{-\beta\theta}}{\Gamma(\alpha)}}
+{\frac{(\beta+1)^{\alpha+y}\theta^{\alpha+y-1}e^{-(\beta+1)\theta}}{\Gamma(\alpha+y)}} \\
+&amp;= \frac{\Gamma(\alpha+y)}{\Gamma(\alpha)y!} \frac{\beta^\alpha}{(\beta+1)^{\alpha + y}}\theta^0e^0 \\
+&amp;=\frac{(y+\alpha-1)!}{(\alpha-1)!y!} \left(\frac{\beta}{\beta+1}\right)^\alpha \left(\frac{1}{\beta+1}\right)^y \\
+&amp;=\binom{y+\alpha-1}{y} \left(\frac{\beta}{\beta+1}\right)^\alpha \left(\frac{1}{\beta+1}\right)^y
+\end{align}
+\]</span> ¿Qué distribución marginal tiene <span class="math inline">\(y\)</span> bajo el modelo conjugado?</p>
+<p>Es una distrubución binomial negativa, por lo tanto <span class="math display">\[ p(y) \sim BinNeg(\alpha,\beta)\]</span></p>
 <hr />
 <p>En la práctica, es útil extender el modelo Poisson como sigue <span class="math display">\[\begin{align}
   x_i | t_i, \theta &amp;\sim \textsf{Poisson}(\lambda_i), \\
   \lambda_i &amp;= t_i \theta, 
 \end{align}\]</span></p>
 <p>donde la tasa de ocurrencia <span class="math inline">\(\lambda_i\)</span> ha sido descompuesta en un producto que incorpora la exposición <span class="math inline">\(t_i\)</span> y una tasa de ocurrencia por unidades expuestas <span class="math inline">\(\theta.\)</span> En este contexto usualmente tenemos observaciones para <span class="math inline">\(x_i\)</span> y <span class="math inline">\(t_i\)</span> pues conocemos el parámetro de exposición. Por ejemplo, si <span class="math inline">\(x_i\)</span> es el número de personas que se enferman de gripe en la <span class="math inline">\(i\)</span>-ésima ciudad en un año, entonces <span class="math inline">\(\theta\)</span> denota la tasa anual por persona de enfermarse de gripe en una población de tamaño <span class="math inline">\(t_i\)</span>.</p>
-<hr />
 <p><strong>Pregunta 3)</strong> Supongamos que tenemos datos <span class="math inline">\(X_1, \ldots, X_n \sim \textsf{Poisson}(\lambda_i),\)</span> con <span class="math inline">\(\lambda_i = t_i \theta\)</span> para <span class="math inline">\(i = 1, \ldots, n.\)</span> Utilizando el modelo conjugado, ¿cuál es la distribución posterior de <span class="math inline">\(\theta?\)</span></p>
+<p><span class="math display">\[
+\begin{align}
+\Pi (\theta \mid x_1 , \dots, x_n) 
+&amp;\propto \Pi (x_1, \dots, x_n \mid \theta) \cdot \Pi (\theta) \\
+&amp;\propto \prod_i{\Pi(x_i \mid \theta)} \cdot \Pi(\theta) \\
+&amp;\propto \prod_i{\frac{(\theta t_i)^{x_i} e^{-\theta t_i}}{x_i!}} \cdot \theta^{\alpha-1}e^{-\beta \theta} \\
+&amp;\propto \theta^{\sum{x_i}}e^{-\theta\sum t_i} \cdot \theta^{\alpha-1}e^{-\beta \theta} \\
+&amp;\propto \theta^{\alpha + \sum{x_i} - 1}e^{-\theta(\beta + \sum t_i)}
+\end{align}
+\]</span></p>
+<p>Por lo tanto, la distribución posterior es: <span class="math display">\[
+\Pi (\theta\mid x_1 ,\dots,x_n)\sim Gamma(\alpha + \sum{x_i}, \beta + \sum t_i)
+\]</span></p>
 <hr />
 </div>
 <div id="caso-de-estudio-tasas-de-mortalidad" class="section level1">

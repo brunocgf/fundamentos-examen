@@ -2,8 +2,8 @@
 title: "Examen final - Otoño 2020"
 author: "Alfredo Garbuno Iñigo"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 **Entrega:** Enviar la carpeta que el codigo de solución (.Rmd y funciones
@@ -138,11 +138,56 @@ donde $k! = k \times k-1 \times k-2 \times \cdots \times 1,$ y la función Gamma
 la **distribución predictiva previa** para una observación Poisson. Es decir, calcula 
 $$p(y) = \int \textsf{Poisson}(y \,| \,\theta) \textsf{Gamma}(\theta \, | \, \alpha, \beta) \, \text{d}\theta.$$
 
+
+$$
+\begin{align}
+p(y) &= \int_0^{\infty} \frac{\theta^y e^{-\theta}}{y!} \cdot
+\frac{\beta^\alpha \theta^{\alpha-1} e^{-\beta \theta}}{\Gamma(\alpha)} d\theta \\
+&= \frac{\beta^\alpha}{\Gamma(\alpha)y!} 
+\int_0^\infty\theta^{y+\alpha -1}e^{-\theta(\beta +1)}d\theta
+\end{align}
+$$
+Sabemos que:
+$$ \Gamma(z) = \int_0^\infty t^{z-1}e^{-t}dt$$
+Entonces si:
+
+$$
+t = \theta(\beta +1)\\
+\Rightarrow \theta = \frac{t}{\beta +1} \\
+d\theta = \frac{1}{\beta +1}dt
+$$
+Así:
+$$
+\begin{align}
+&= \frac{\beta^\alpha}{\Gamma(\alpha)y!} 
+\int_0^\infty\frac{t}{\beta +1}^{y+\alpha -1}e^{-t} \frac{1}{\beta +1}dt \\
+&= \frac{\beta^\alpha}{\Gamma(\alpha)y!}\cdot\frac{1}{(\beta+1)^{y+\alpha}} \int_0^\infty t^{y+\alpha -1}e^{-t}dt \\
+&= \frac{\beta^\alpha}{\Gamma(\alpha)y!}\cdot\frac{1}{(\beta+1)^{y+\alpha}} \Gamma(y+\alpha) \\
+&= \frac{\Gamma(y+\alpha)}{\Gamma(\alpha)y!}  \frac{\beta^\alpha}{(\beta+1)^{y+\alpha}} \\
+&=\frac{(y+\alpha-1)!}{(\alpha-1)!y!} \left(\frac{\beta}{\beta+1}\right)^\alpha \left(\frac{1}{\beta+1}\right)^y \\
+&=\binom{y+\alpha-1}{y} \left(\frac{\beta}{\beta+1}\right)^\alpha \left(\frac{1}{\beta+1}\right)^y
+\end{align}
+$$
+
+
 Verifica tu cálculo utilizando las reglas probabilidad condicional. En especifico, utiliza
 
 $$ p(y) = \frac{p(y|\theta)p(\theta)}{p(\theta|y)}.$$
+Tenemos que:
 
+$$
+\begin{align}
+p(y) &= \frac{ \frac{\theta^y e^{-\theta}}{y!} \frac{\beta^\alpha\theta^{\alpha-1}e^{-\beta\theta}}{\Gamma(\alpha)}}
+{\frac{(\beta+1)^{\alpha+y}\theta^{\alpha+y-1}e^{-(\beta+1)\theta}}{\Gamma(\alpha+y)}} \\
+&= \frac{\Gamma(\alpha+y)}{\Gamma(\alpha)y!} \frac{\beta^\alpha}{(\beta+1)^{\alpha + y}}\theta^0e^0 \\
+&=\frac{(y+\alpha-1)!}{(\alpha-1)!y!} \left(\frac{\beta}{\beta+1}\right)^\alpha \left(\frac{1}{\beta+1}\right)^y \\
+&=\binom{y+\alpha-1}{y} \left(\frac{\beta}{\beta+1}\right)^\alpha \left(\frac{1}{\beta+1}\right)^y
+\end{align}
+$$
 ¿Qué distribución marginal tiene $y$ bajo el modelo conjugado?
+
+Es una distrubución binomial negativa, por lo tanto
+$$ p(y) \sim BinNeg(\alpha,\beta)$$
 
 ---
 
@@ -152,20 +197,27 @@ En la práctica, es útil extender el modelo Poisson como sigue
   \lambda_i &= t_i \theta, 
 \end{align}
 
-donde la tasa de ocurrencia $\lambda_i$ ha sido descompuesta en un producto que
-incorpora la exposición $t_i$ y una tasa de ocurrencia por unidades expuestas
-$\theta.$ En este contexto usualmente tenemos observaciones para $x_i$ y $t_i$
-pues conocemos el parámetro de exposición. Por ejemplo, si $x_i$ es el número de
-personas que se enferman de gripe en la $i$-ésima ciudad en un año, entonces $\theta$
-denota la tasa anual por persona de enfermarse de gripe en una población de tamaño
-$t_i$.
-
---- 
+donde la tasa de ocurrencia $\lambda_i$ ha sido descompuesta en un producto que incorpora la exposición $t_i$ y una tasa de ocurrencia por unidades expuestas $\theta.$ En este contexto usualmente tenemos observaciones para $x_i$ y $t_i$ pues conocemos el parámetro de exposición. Por ejemplo, si $x_i$ es el número de personas que se enferman de gripe en la $i$-ésima ciudad en un año, entonces $\theta$ denota la tasa anual por persona de enfermarse de gripe en una población de tamaño $t_i$.
 
 **Pregunta 3)** Supongamos que tenemos datos $X_1, \ldots, X_n \sim
-\textsf{Poisson}(\lambda_i),$ con $\lambda_i = t_i \theta$ para $i = 1, \ldots,
-n.$ Utilizando el modelo conjugado, ¿cuál es la distribución posterior de
-$\theta?$
+\textsf{Poisson}(\lambda_i),$ con $\lambda_i = t_i \theta$ para $i = 1, \ldots, n.$ Utilizando el modelo conjugado, ¿cuál es la distribución posterior de $\theta?$
+
+
+$$
+\begin{align}
+\Pi (\theta \mid x_1 , \dots, x_n) 
+&\propto \Pi (x_1, \dots, x_n \mid \theta) \cdot \Pi (\theta) \\
+&\propto \prod_i{\Pi(x_i \mid \theta)} \cdot \Pi(\theta) \\
+&\propto \prod_i{\frac{(\theta t_i)^{x_i} e^{-\theta t_i}}{x_i!}} \cdot \theta^{\alpha-1}e^{-\beta \theta} \\
+&\propto \theta^{\sum{x_i}}e^{-\theta\sum t_i} \cdot \theta^{\alpha-1}e^{-\beta \theta} \\
+&\propto \theta^{\alpha + \sum{x_i} - 1}e^{-\theta(\beta + \sum t_i)}
+\end{align}
+$$
+
+Por lo tanto, la distribución posterior es:
+$$
+\Pi (\theta\mid x_1 ,\dots,x_n)\sim Gamma(\alpha + \sum{x_i}, \beta + \sum t_i)
+$$
 
 ---
 
