@@ -59,6 +59,8 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning=FALSE,
                       fig.align = 'center', cache=TRUE, fig.height = 3,
                       out.width =  "99%")
 comma <- function(x) format(x, digits = 2, big.mark = ",")
+
+source("utils.R")
 ```
  
  
@@ -238,7 +240,8 @@ registros de defunción.
 elijas. Encontrarás en los archivos en `datos/poblacion/defunciones/<año>` los
 registros de defunciones por Neumonía para el `<año>` que escojas.
 
-```{r carga defunciones de un año}
+```{r carga defunciones de un año, message=FALSE}
+defunciones <- read_csv("./datos_examen/poblacion/defunciones/2019/defunciones_registradas.csv")
 
 ```
 
@@ -248,16 +251,24 @@ de edad (aunque despúes los utilizaremos). Por ahora escribe el codigo necesari
 para calcular el tamaño de la población en cada uno de los municipios.
 
 
-```{r carga demograficos}
+```{r carga demograficos, message=FALSE}
+poblacion <- read_csv("./datos_examen/poblacion/demograficos/poblacion_municipios_edad.csv")
+
+poblacion <- poblacion %>% 
+  mutate(poblacion = p_0a2+p_3a5+p_6a11+p_12a17+p_18a24+p_25a64+pob65_mas)
 
 ```
 
-**Pregunta 6)** Ahora necesitamos *cruzar* las tablas de defunciones y población para crear una 
-tabla con ambos registros. Para esto necesitarás la función `dplyr::full_join`.
+**Pregunta 6)** Ahora necesitamos *cruzar* las tablas de defunciones y población para crear una tabla con ambos registros. Para esto necesitarás la función `dplyr::full_join`.
 
 
-```{r cruce defunciones y poblacion}
+```{r cruce defunciones y poblacion, message=FALSE}
+defunciones_mun <- defunciones %>% 
+  group_by(entidad, municipio) %>% 
+  count(name = 'defunciones')
 
+datos = poblacion %>% 
+  left_join(defunciones_mun, by=c('entidad', 'municipio'))
 
 ```
 
@@ -270,9 +281,18 @@ no necesitamos los conteos por año, sólo el agrupado. Es decir, el número de
 defunciones totales de los 5 años por municipio.
 
 
-```{r carga masiva, echo = FALSE, message = FALSE, warning = FALSE}
+```{r carga masiva, message = FALSE, warning = FALSE}
+defunciones <- cargar_defunciones()
 
+defunciones_mun <- defunciones %>% 
+  group_by(entidad, municipio) %>% 
+  count(name = 'defunciones')
+
+datos = poblacion %>% 
+  left_join(defunciones_mun, by=c('entidad', 'municipio')) %>% 
+  replace_na(list(defunciones=0))
 ```
+
 
 --- 
 
@@ -291,6 +311,8 @@ $\lambda_i$ la tasa con la que ocurren las  muertes por neumonía en el periodo
 observado para la población del municipio $i$-ésimo.
 
 **Pregunta 8)** ¿Cómo escribirías $\lambda_i$ en función de $\theta_i$?
+
+$$\lambda_i = n_i\theta_i$$
 
 Ahora, utilizaremos un mapa para ver si podemos observar algún patrón en las
 tasas de mortalidad por individuo por año $\theta_i.$ Por ejemplo, podríamos
@@ -312,11 +334,25 @@ podrías presentar esto como dos mapas separados.
 
 
 
-```{r}
-
+```{r, eval=FALSE}
+datos %>% 
+  mutate(region = paste(entidad,municipio, sep=""),
+         value = defunciones/poblacion) %>% 
+  mxmunicipio_choropleth()
 
 ```
 
+```{r}
+datos %>% 
+  mutate(region = paste(entidad,municipio, sep=""),
+         mortalidad = defunciones/poblacion, 
+         orden = row_number(mortalidad)/nrow(datos),
+         value = ifelse(orden<0.75,
+         ifelse(orden<0.25,"1_Menos_casos","2_Prom"),
+         "3_Mas_casos")) %>% 
+  mxmunicipio_choropleth()
+
+```
 ¿Qué observas? No hay patrón tan claro. Especialmente si observamos lo que
 sucede en Chihuahua, Durango y Coahuila, donde tenemos municipios de ambas
 categorías. ¿Cómo puede ser que un mismo estado tenga las tasas mas altas y
