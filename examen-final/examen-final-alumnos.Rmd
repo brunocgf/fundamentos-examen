@@ -2,7 +2,6 @@
 title: "Examen final - Otoño 2020"
 author: "Alfredo Garbuno Iñigo"
 output:
-  html_document: default
   pdf_document: default
 ---
 
@@ -243,7 +242,87 @@ registros de defunciones por Neumonía para el `<año>` que escojas.
 ```{r carga defunciones de un año, message=FALSE}
 defunciones <- read_csv("./datos_examen/poblacion/defunciones/2019/defunciones_registradas.csv")
 
+
+str(defunciones)
+lapply(defunciones[,1:5], function(x){length(unique(x))} )
+
 ```
+
+* El dataset contiene $5$ variables y tenemos un total de $30,327$ observaciones.
+
+* Observemos que tenemos $33$ entidades, lo cual hace un poco de ruido, ya que, la República Mexicana está constituída por $32$ entidades federativas.
+
+* En el dataset se tiene información de $314$ municipios, de acuerdo a informaicón declarada por el [INEGI](http://cuentame.inegi.org.mx/territorio/division/default.aspx?tema=T#:~:text=Para%20gobernar%2C%20organizar%20y%20administrar,todo%20el%20pa%C3%ADs%202%20457.) hay un total de $2,465$ municipios, por lo que nuestra muestra contiene aproximadamente el $12\%$ de ellos.
+
+* Para el sexo aparecen $3$ categorías (intuitivamente diríamos que es Masculino, Femenino y No declarado).
+
+* Tenemos $7$ grupos de edad, los cuales son los siguientes:
+
+```{r defunciones por edad}
+defunciones$edad_grupos %>% unique
+```
+
+
+* $[3, 6)$
+* $[6, 12)$
+* $[12, 18)$
+* $[18, 25)$
+* $[25, 64)$
+* $[64, \inf)$
+
+Para el tema de los $33$ estados analicemos los valores:
+```{r defunciones por estado}
+defunciones$entidad %>% unique() %>% sort()
+```
+Nótese que se tiene una entidad $99$, que por intuición indicaríamos que es una Entidad no identificada.
+
+Y ahora para la variable sexo:
+```{r defunciones por genero}
+defunciones$sexo %>% unique() %>% sort()
+```
+
+Nuestra hipótesis era casi correcta, tenemos un tercer sexo el cual es NaN, que indica nos sugiere que el usuario no se identificó con alguno de los 2 sexos o bien, no quiso declarar esa información.
+
+Ahora anilcemos un poco la variabilida de los datos.
+
+```{r grafica defunciones por año}
+defunciones %>% 
+  ggplot(data = ., aes(x = edad)) +
+  geom_boxplot(aes(color = sexo)) +
+  ggtitle('Edad por sexo declarado') +
+  xlab('Edad') +
+  ylab('Frecuencia relativa') +
+  ggthemes::theme_base()
+
+defunciones %>% colnames()
+```
+Es difícil analizar la dispersión de las edades por sexo debido a la existencia de $2$ valores atípicos, los cuales equivalen a la edad $1000$ años, lo cual no hace sentido, pues no existe ningún registro de una persona en la historia de la humanidad que haya sobrevivido a $1,000$ años. Suponemos que para dichas observaciones el individuo no quiso declarar su edad o bien hubo un  error en el registro de la captura del dato. A continuación analizaremos las edades sin dichos valores.
+
+```{r defunciones sin atipicos}
+defunciones %>% 
+  filter(edad < 250) %>% 
+  ggplot(data = ., aes(x = edad)) +
+  geom_boxplot(aes(color = sexo)) +
+  ggtitle('Edad filtrada por sexo declarado') +
+  xlab('Edad') +
+  ylab('Frecuencia relativa') +
+  ggthemes::theme_base()
+```
+
+Realizando el filtro correspondiente es un poco más "sencillo" (es una palabra que no nos gusta utilizar, ya que es relativo a la persona) analizar la dispersión de la edad para las personas:
+* La mediana de edad para mujeres es mayor que para los hombres, sin embargo, ambas distribuciones son muy similares.
+* Para el sexo no declarado la edad únicamente es 0, por lo que, para dichas observaciones el individuo no quiso declarar su sexo ni edad.
+
+
+En relación a la variable `entidad`, estos son nuestros comentarios:
+```{r defunciones por entidad}
+defunciones %>% 
+  select(entidad) %>% 
+  table() %>% 
+  sort(decreasing = TRUE)
+```
+Es difícil saber qué Estado representa cada número, ya que, no se cuenta con un diccionario de datos. Por ahora solamente se puede indicar que el estado $9$, es el que tiene un mayor peso en el dataset.
+
 
 **Pregunta 5)** De igual forma, carga los datos de población que encontrarás en
 `datos_examen/poblacion/demograficos`. Por el momento, no necesitamos los grupos
@@ -263,6 +342,7 @@ poblacion <- poblacion %>%
 
 
 ```{r cruce defunciones y poblacion, message=FALSE}
+# Primero se agrupan los datos de defunciones por municipio
 defunciones_mun <- defunciones %>% 
   group_by(entidad, municipio) %>% 
   count(name = 'defunciones')
@@ -348,7 +428,7 @@ datos %>%
          mortalidad = defunciones/poblacion, 
          orden = row_number(mortalidad)/nrow(datos),
          value = ifelse(orden<0.75,
-         ifelse(orden<0.25,"1_Menos_casos","2_Prom"),
+         ifelse(orden<0.25,"1_Menos_casos","2_Med"),
          "3_Mas_casos")) %>% 
   mxmunicipio_choropleth()
 
@@ -382,7 +462,7 @@ una idea de las tasas de mortalidad por neumonía en el resto del mundo.
 A continuación se muestra las tasas de mortalidad para los últimos años para
 algunos paises y la region de America Latina y el Caribe.
 
-```{r, echo = FALSE, eval=FALSE}
+```{r, echo = FALSE}
 knitr::include_graphics('imagenes/mortalidad-neumonia.png')
 ```
 
@@ -405,7 +485,7 @@ no lineales por medio de la función `nleqslv::nleqslv`. Escribe tu razonamiento
 para seleccionar dichos valores. 
 
 ```{r elicitacion, eval=FALSE}
-limits <- # escribe los intervalos adecuados aqui
+limits <- c(1,1)# escribe los intervalos adecuados aqui
 
 gamma.limits <- function(x){
   # reparametrizamos para que el problema sea mas "fácil" en términos numéricos.
@@ -413,7 +493,7 @@ gamma.limits <- function(x){
   log_beta  <- x[2]
   
   # definimos las cotas de probabilidad
-  p_cota <- # define un valor adecuada
+  p_cota <- 10# define un valor adecuada
   c(    pgamma(limits[1], exp(log_alpha), rate = exp(log_beta)) - p_cota,
     1 - pgamma(limits[2], exp(log_alpha), rate = exp(log_beta)) - p_cota)
 }
@@ -426,9 +506,7 @@ params.prior <- exp(results$x)
 
 ```
 
-**Pregunta 10)** Grafica los histogramas de una variable aleatoria Gamma con los valores
-iniciales para el problema de optimización y con los finales de dicho algorimo.
-Esto te servirá de verificación que el método funciona adecuadamente.
+**Pregunta 10)** Grafica los histogramas de una variable aleatoria Gamma con los valores iniciales para el problema de optimización y con los finales de dicho algorimo. Esto te servirá de verificación que el método funciona adecuadamente.
 
 ```{r histogramas elicitacion}
 
