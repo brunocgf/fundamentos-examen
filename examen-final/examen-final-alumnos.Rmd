@@ -491,6 +491,7 @@ para seleccionar dichos valores.
 
 ```{r elicitacion}
 limits <- c(1.12/100000,180/100000)# escribe los intervalos adecuados aqui
+#limits <- c(.5, .99)
 
 gamma.limits <- function(x){
   # reparametrizamos para que el problema sea mas "fácil" en términos numéricos.
@@ -498,7 +499,7 @@ gamma.limits <- function(x){
   log_beta  <- x[2]
   
   # definimos las cotas de probabilidad
-  p_cota <- 0.05# define un valor adecuada
+  p_cota <- 0.01# define un valor adecuada
   c(    pgamma(limits[1], exp(log_alpha), rate = exp(log_beta)) - p_cota,
     1 - pgamma(limits[2], exp(log_alpha), rate = exp(log_beta)) - p_cota)
 }
@@ -508,6 +509,7 @@ initial_guess <- c(log(1), log(1))
 results <- nleqslv(initial_guess, gamma.limits)
 
 params.prior <- exp(results$x)
+#params.prior <- results$x
 
 ```
 
@@ -609,10 +611,6 @@ muer_105 <- rnbinom(n,
                     size=100000*params.prior[1],
                     (params.prior[2]/(params.prior[2]+1)))
 
-# muer_103 <- rerun(n, rnbinom(1000,params.prior)) %>% as_vector()
-# muer_104 <- rerun(n, rnbinom(10000,params.prior)) %>% as_vector()
-# muer_105 <- rerun(n, rnbinom(100000,params.prior)) %>% as_vector()
-
 df_hist <- data.frame(
   type = c( rep("10^3", n), rep("10^4", n),rep("10^5", n)),
   value = c(muer_103,muer_104,muer_105)
@@ -631,18 +629,40 @@ df_hist %>%
 **Pregunta 14)** Calcula los valores posteriores de las tasas de mortalidad bajo nuestro modelo bayesiano y compara con los estimadores de máxima verosimilitud. Para esto puedes utilizar un gráfico de dispersión cómo el visto en clase o los anteriores. ¿Observas regularización en nuestras estimaciones? ¿Qué observas si haces un grafico como el de la pregunta 12?
 
 ```{r}
-update_parm <- function(num_muertes , tam_pob, params.prior){
+pars_post <- function(num_muertes , tam_pob, params.prior){
   
   # Parametros iniciales
   alpha_prior <- params.prior[1]
   beta_prior <- params.prior[2]
   
   # Parámetros
-  alpha_post <- alpha_prior + sum(num_muertes, na.rm=TRUE)
+  alpha_post <- alpha_prior + num_muertes
   
   # beta post
-  beta_post <- beta_prior + sum(tam_pob, na.rm=TRUE)
-  return(c(alpha_post, beta_post)) }
+  beta_post <- beta_prior + tam_pob
+  
+  beta_post
+  # Simulacion
+  rgamma(1, alpha_post, rate=beta_post)
+  }
+
+```
+
+
+```{r}
+#pars_post = Vectorize(pars_post)
+vec_gamma = Vectorize(rgamma)
+# x <- datos %>%
+#   mutate(theta_post = pars_post(defunciones, poblacion, params.prior))
+datos <-  datos %>%
+  mutate(alpha_post = params.prior[1] + defunciones/5,
+         beta_post = params.prior[2] + poblacion,
+         theta_post = vec_gamma(1,alpha_post,beta_post))
+```
+
+```{r}
+ggplot(datos) +
+  geom_point(aes(x=mortalidad, y = theta_post))
 ```
 
 
