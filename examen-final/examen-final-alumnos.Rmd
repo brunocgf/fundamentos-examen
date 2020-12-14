@@ -2,7 +2,6 @@
 title: "Examen final - Otoño 2020"
 author: "Alfredo Garbuno Iñigo"
 output:
-  html_document: default
   pdf_document: default
 ---
 
@@ -429,7 +428,7 @@ datos %>%
 ```{r}
 datos <- datos %>% 
   mutate(region = paste(entidad,municipio, sep=""),
-         mortalidad = 5*defunciones/poblacion, 
+         mortalidad = ((defunciones/5)/poblacion), 
          orden = row_number(mortalidad)/nrow(datos),
          value = ifelse(orden<0.75,
          ifelse(orden<0.25,"1_Menos_casos","2_Med"),
@@ -626,7 +625,7 @@ df_hist %>%
 
 ```
 
-**Pregunta 14)** Calcula los valores posteriores de las tasas de mortalidad bajo nuestro modelo bayesiano y compara con los estimadores de máxima verosimilitud. Para esto puedes utilizar un gráfico de dispersión cómo el visto en clase o los anteriores. ¿Observas regularización en nuestras estimaciones? ¿Qué observas si haces un grafico como el de la pregunta 12?
+**Pregunta 14)** Calcula los valores posteriores de las tasas de mortalidad bajo nuestro modelo bayesiano y compara con los estimadores de máxima verosimilitud. Para esto puedes utilizar un gráfico de dispersión cómo el visto en clase o los anteriores. ¿Observas regularización en nuestras estimaciones? ¿Qué observas si haces un grafico como el de la pregunta 12? ¿Observas regularización en nuestras estimaciones? Para este punto, utiliza las tasas observadas (MLE) y las tasas esperadas posteriores (MAP).
 
 ```{r}
 pars_post <- function(num_muertes , tam_pob, params.prior){
@@ -655,7 +654,7 @@ vec_gamma = Vectorize(rgamma)
 # x <- datos %>%
 #   mutate(theta_post = pars_post(defunciones, poblacion, params.prior))
 datos <-  datos %>%
-  mutate(alpha_post = params.prior[1] + defunciones/5,
+  mutate(alpha_post = params.prior[1] + defunciones,
          beta_post = params.prior[2] + poblacion,
          theta_post = vec_gamma(1,alpha_post,beta_post))
 ```
@@ -743,16 +742,29 @@ post_hist %>%
 
 **Pregunta 15)** Utiliza la distribución predictiva *posterior* para verificar el ajuste del modelo. Para esto, escoge tres municipios al azar de distintos tamaños (chico, mediano, grande) y haz un *lineup* para cada uno para observar si las predicciones posteriores son consistentes con los datos.
 
+**Pregunta 15)** Utiliza la distribución predictiva *posterior* para verificar
+el ajuste del modelo. Para esto, escoge tres municipios al azar de distintos
+tamaños (chico, mediano, grande). Grafica un histograma y compara con el número observado de defunciones.
+
 ```{r}
+datos %>% 
+  filter(region == '20335' | region=='14020' | region=='01005') %>% 
+  mutate(orden = row_number(poblacion), 
+         tamano = factor(ifelse(orden==1, 
+                         "chico", 
+                         ifelse(orden==2, "mediano", "grande")),
+                         levels = c("chico", "mediano", "grande"))) %>% 
+  pivot_longer(cols=c(mortalidad, theta_post),
+               names_to = "estimador", values_to = "values") %>% 
+  ggplot() +
+  geom_col(aes(x=tamano, y=values, fill=estimador), position = "dodge")
 
 ```
 
 
 ## Incorporando Grupos de Edad
 
-Se sabe que las muertes por neumonia no son uniformes y las tasas de mortalidad
-son mas altas en niños y personas mayores. Ahora realizaremos el mismo análisis
-considerando grupos de edad. Para esto ampliaremos nuestro modelo
+Se sabe que las muertes por neumonia no son uniformes y las tasas de mortalidad son mas altas en niños y personas mayores. Ahora realizaremos el mismo análisis considerando grupos de edad. Para esto ampliaremos nuestro modelo
 
 $$ y_{k,i} \, | \, n_{k,i}, \theta_{k,i} \sim \textsf{Poisson}(\lambda_{k,i}),$$
 
