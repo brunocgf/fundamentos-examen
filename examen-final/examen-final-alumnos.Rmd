@@ -533,8 +533,7 @@ df_gamma %>%
 
 **Pregunta 11)** ¿Cómo se compara la distribución a priori con las tasas
 observadas en los municipios? Puedes utilizar histogramas para estas
-comparaciones. Por otro lado, no te preocupes si no se ven identicas. El punto es
-ver que nuestras creencias iniciales se ven coherentes. 
+comparaciones. Por otro lado, no te preocupes si no se ven identicas. El punto es ver que nuestras creencias iniciales se ven coherentes. 
 
 ```{r}
 
@@ -589,16 +588,30 @@ tamaño $n = 10^3, 10^4, 10^5.$
 ```{r}
 n = 1000
 
-sim_binom <- function(n, params.prior){
-  rnbinom(n,
-          size=params.prior[1],
-          prob=(params.prior[2]/(params.prior[2]+1))) %>% 
-    sum()
-}
+# sim_binom <- function(n, params.prior){
+#   rnbinom(n,
+#           size=params.prior[1],
+#           prob=(params.prior[2]/(params.prior[2]+1))) %>% 
+#     sum()
+# }
 
-muer_103 <- rerun(n, sim_binom(1000,params.prior)) %>% as_vector()
-muer_104 <- rerun(n, sim_binom(10000,params.prior)) %>% as_vector()
-muer_105 <- rerun(n, sim_binom(100000,params.prior)) %>% as_vector()
+# muer_103 <- rerun(n, sim_binom(1000,params.prior)) %>% as_vector()
+# muer_104 <- rerun(n, sim_binom(10000,params.prior)) %>% as_vector()
+# muer_105 <- rerun(n, sim_binom(100000,params.prior)) %>% as_vector()
+
+muer_103 <- rnbinom(n, 
+                    size=1000*params.prior[1],
+                    (params.prior[2]/(params.prior[2]+1)))
+muer_104 <- rnbinom(n, 
+                    size=10000*params.prior[1],
+                    (params.prior[2]/(params.prior[2]+1)))
+muer_105 <- rnbinom(n, 
+                    size=100000*params.prior[1],
+                    (params.prior[2]/(params.prior[2]+1)))
+
+# muer_103 <- rerun(n, rnbinom(1000,params.prior)) %>% as_vector()
+# muer_104 <- rerun(n, rnbinom(10000,params.prior)) %>% as_vector()
+# muer_105 <- rerun(n, rnbinom(100000,params.prior)) %>% as_vector()
 
 df_hist <- data.frame(
   type = c( rep("10^3", n), rep("10^4", n),rep("10^5", n)),
@@ -615,21 +628,100 @@ df_hist %>%
 
 ```
 
-**Pregunta 14)** Calcula los valores posteriores de las tasas de mortalidad bajo
-nuestro modelo bayesiano y compara con los estimadores de máxima verosimilitud. 
-Para esto puedes utilizar un gráfico de dispersión cómo el visto en clase o los
-anteriores. ¿Observas regularización en nuestras estimaciones? ¿Qué observas si
-haces un grafico como el de la pregunta 12?
+**Pregunta 14)** Calcula los valores posteriores de las tasas de mortalidad bajo nuestro modelo bayesiano y compara con los estimadores de máxima verosimilitud. Para esto puedes utilizar un gráfico de dispersión cómo el visto en clase o los anteriores. ¿Observas regularización en nuestras estimaciones? ¿Qué observas si haces un grafico como el de la pregunta 12?
 
 ```{r}
+update_parm <- function(num_muertes , tam_pob, params.prior){
+  
+  # Parametros iniciales
+  alpha_prior <- params.prior[1]
+  beta_prior <- params.prior[2]
+  
+  # Parámetros
+  alpha_post <- alpha_prior + sum(num_muertes, na.rm=TRUE)
+  
+  # beta post
+  beta_post <- beta_prior + sum(tam_pob, na.rm=TRUE)
+  return(c(alpha_post, beta_post)) }
+```
 
+
+```{r}
+update_parm <- function(num_muertes , tam_pob, params.prior){
+  
+  # Parametros iniciales
+  alpha_prior <- params.prior[1]
+  beta_prior <- params.prior[2]
+  
+  # Parámetros
+  alpha_post <- alpha_prior + sum(num_muertes, na.rm=TRUE)
+  
+  # beta post
+  beta_post <- beta_prior + sum(tam_pob, na.rm=TRUE)
+  return(c(alpha_post, beta_post)) }
+
+pars_post <- update_parm(datos$defunciones,
+                                     datos$poblacion,
+                                     params.prior)
+
+sim_params <- function(m, pars){
+  alpha_0 <- pars[1]
+  beta_0 <- pars[2]
+  # simular sigmas
+  sims <- tibble(theta = rgamma(m, alpha_0, beta_0))
+  }
+
+post_mort <- sim_params(1000,pars_post)
+
+#post_mort %>%
+#  ggplot(aes(x=theta)) +
+#  geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity') +
+#  scale_fill_manual(values=c("#69b3a2")) +
+#  labs(fill="") #+
+#  #geom_vline(xintercept = mean(rat_mort$value,na.rm=TRUE))
+
+post_hist1<-data.frame('value' = datos$mortalidad)
+post_hist1$type <- 'observada'
+
+post_hist2<-data.frame('value'=post_mort)
+post_hist2$type <- 'posterior'
+names(post_hist2)[1] <- "value"
+
+post_hist <- rbind(post_hist1, post_hist2)
+
+post_hist %>%
+  ggplot(aes(x=value,fill=type)) +
+  geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity') +
+  scale_fill_manual(values=c("#69b3a2","#404080")) +
+  labs(fill="")# +
+  #geom_vline(xintercept = mean(rat_mort$value,na.rm=TRUE)) +
+  #geom_vline(xintercept = mean(post_mort,na.rm=TRUE))
+
+post_hist %>%
+  filter(type == 'observada') %>% 
+  ggplot(aes(x=value,fill=type)) +
+  geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity') +
+  scale_fill_manual(values=c("#69b3a2","#404080")) +
+  labs(fill="")# +
+  #geom_vline(xintercept = mean(rat_mort$value,na.rm=TRUE)) +
+  #geom_vline(xintercept = mean(post_mort,na.rm=TRUE))
+
+post_hist %>%
+  filter(type == 'posterior') %>% 
+  ggplot(aes(x=value,fill=type)) +
+  geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity') +
+  scale_fill_manual(values=c("#69b3a2","#404080")) +
+  labs(fill="")# +
+  #geom_vline(xintercept = mean(rat_mort$value,na.rm=TRUE)) +
+  #geom_vline(xintercept = mean(post_mort,na.rm=TRUE))
+
+post_hist %>%
+  group_by(type) %>%
+  summarise(media=mean(value,na.rm=TRUE),desest=sd(value,na.rm=TRUE),n=n())
 
 ```
 
-**Pregunta 15)** Utiliza la distribución predictiva *posterior* para verificar
-el ajuste del modelo. Para esto, escoge tres municipios al azar de distintos
-tamaños (chico, mediano, grande) y haz un *lineup* para cada uno para observar
-si las predicciones posteriores son consistentes con los datos.
+**Pregunta 15)** Utiliza la distribución predictiva *posterior* para verificar el ajuste del modelo. Para esto, escoge tres municipios al azar de distintos tamaños (chico, mediano, grande) y haz un *lineup* para cada uno para observar si las predicciones posteriores son consistentes con los datos.
 
 ```{r}
 
