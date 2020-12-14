@@ -2,6 +2,7 @@
 title: "Examen final - Otoño 2020"
 author: "Alfredo Garbuno Iñigo"
 output:
+  html_document: default
   pdf_document: default
 ---
 
@@ -244,7 +245,7 @@ defunciones <- read_csv("./datos_examen/poblacion/defunciones/2019/defunciones_r
 
 
 str(defunciones)
-lapply(defunciones[,1:5], function(x){length(unique(x))} )
+map_int(defunciones[,1:5], ~length(unique(.x)) )
 
 ```
 
@@ -362,6 +363,9 @@ defunciones totales de los 5 años por municipio.
 
 
 ```{r carga masiva, message = FALSE, warning = FALSE}
+# En la funcion cargar_defunciones, en caso de error
+# Por favor escribir como parámetro la dirección donde se entuentran 
+# los archivos de defunciones (ej: "./datos_examen/poblacion/defunciones/")
 defunciones <- cargar_defunciones()
 
 defunciones_mun <- defunciones %>% 
@@ -423,14 +427,15 @@ datos %>%
 ```
 
 ```{r}
-datos %>% 
+datos <- datos %>% 
   mutate(region = paste(entidad,municipio, sep=""),
-         mortalidad = defunciones/poblacion, 
+         mortalidad = 5*defunciones/poblacion, 
          orden = row_number(mortalidad)/nrow(datos),
          value = ifelse(orden<0.75,
          ifelse(orden<0.25,"1_Menos_casos","2_Med"),
-         "3_Mas_casos")) %>% 
-  mxmunicipio_choropleth()
+         "3_Mas_casos"))
+
+mxmunicipio_choropleth(datos)
 
 ```
 ¿Qué observas? No hay patrón tan claro. Especialmente si observamos lo que
@@ -484,8 +489,8 @@ una distribución Gamma adecuada. Encuentra la solución al sistema de ecuacione
 no lineales por medio de la función `nleqslv::nleqslv`. Escribe tu razonamiento 
 para seleccionar dichos valores. 
 
-```{r elicitacion, eval=FALSE}
-limits <- c(1,1)# escribe los intervalos adecuados aqui
+```{r elicitacion}
+limits <- c(1.12/100000,180/100000)# escribe los intervalos adecuados aqui
 
 gamma.limits <- function(x){
   # reparametrizamos para que el problema sea mas "fácil" en términos numéricos.
@@ -493,7 +498,7 @@ gamma.limits <- function(x){
   log_beta  <- x[2]
   
   # definimos las cotas de probabilidad
-  p_cota <- 10# define un valor adecuada
+  p_cota <- 0.05# define un valor adecuada
   c(    pgamma(limits[1], exp(log_alpha), rate = exp(log_beta)) - p_cota,
     1 - pgamma(limits[2], exp(log_alpha), rate = exp(log_beta)) - p_cota)
 }
@@ -510,6 +515,19 @@ params.prior <- exp(results$x)
 
 ```{r histogramas elicitacion}
 
+gamma_inicial <- rgamma(10000,initial_guess[1],initial_guess[2])
+gamma_final <- rgamma(10000,params.prior[1],params.prior[2])
+
+df_gamma <- data.frame(
+  type = c( rep("inicial", 10000), rep("final", 10000)),
+  value = c(gamma_inicial,gamma_final)
+)
+
+df_gamma %>%
+  ggplot(aes(x=value,fill=type)) +
+  geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity',bins=50) +
+  scale_fill_manual(values=c("#69b3a2", "#404080")) +
+  labs(fill="")
 
 ```
 
@@ -520,6 +538,20 @@ ver que nuestras creencias iniciales se ven coherentes.
 
 ```{r}
 
+hist1<-data.frame('value'=datos$mortalidad)
+hist1$type <- 'observada'
+
+hist2<-data.frame('value'=df_gamma %>%filter(type=='final')%>%select(value))
+hist2$type <- 'gamma_apriori'
+
+hist <- rbind(hist1,hist2)
+
+hist %>%
+  ggplot(aes(x=value,fill=type)) +
+  geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity') +
+  scale_fill_manual(values=c("#69b3a2", "#404080")) +
+  labs(fill="")
+
 
 ```
 
@@ -529,6 +561,15 @@ escala logaritmica. Para esto checa la función: `ggplot2::scale_x_log10` y
 `ggplot2::scale_y_log10`
 
 ```{r}
+datos %>%
+  ggplot(aes(x=mortalidad,y=poblacion)) +
+  geom_point()
+
+datos %>%
+  ggplot(aes(x=mortalidad,y=poblacion)) +
+  geom_point() +
+  scale_x_log10() +
+  scale_y_log10()
 
 ```
 
@@ -545,8 +586,31 @@ resuelto en la primera parte del examen!
 Usa histogramas  para ver los números de muertes en municipios hipotéticos de
 tamaño $n = 10^3, 10^4, 10^5.$
 
-```{r, echo = FALSE}
+```{r}
+n = 1000
 
+sim_binom <- function(n, params.prior){
+  rnbinom(n,
+          size=params.prior[1],
+          prob=(params.prior[2]/(params.prior[2]+1))) %>% 
+    sum()
+}
+
+muer_103 <- rerun(n, sim_binom(1000,params.prior)) %>% as_vector()
+muer_104 <- rerun(n, sim_binom(10000,params.prior)) %>% as_vector()
+muer_105 <- rerun(n, sim_binom(100000,params.prior)) %>% as_vector()
+
+df_hist <- data.frame(
+  type = c( rep("10^3", n), rep("10^4", n),rep("10^5", n)),
+  value = c(muer_103,muer_104,muer_105)
+)
+
+df_hist %>%
+  ggplot(aes(x=value,fill=type)) +
+  geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity') +
+  scale_fill_manual(values=c("#69b3a2", "#404080",'504080')) +
+  labs(fill="") +
+  facet_grid(cols = vars(type))
 
 
 ```
