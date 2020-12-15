@@ -2,6 +2,7 @@
 title: "Examen final - Otoño 2020"
 author: "Alfredo Garbuno Iñigo"
 output:
+  html_document: default
   pdf_document: default
 ---
 
@@ -740,8 +741,6 @@ post_hist %>%
 
 ```
 
-**Pregunta 15)** Utiliza la distribución predictiva *posterior* para verificar el ajuste del modelo. Para esto, escoge tres municipios al azar de distintos tamaños (chico, mediano, grande) y haz un *lineup* para cada uno para observar si las predicciones posteriores son consistentes con los datos.
-
 **Pregunta 15)** Utiliza la distribución predictiva *posterior* para verificar
 el ajuste del modelo. Para esto, escoge tres municipios al azar de distintos
 tamaños (chico, mediano, grande). Grafica un histograma y compara con el número observado de defunciones.
@@ -757,7 +756,8 @@ datos %>%
   pivot_longer(cols=c(mortalidad, theta_post),
                names_to = "estimador", values_to = "values") %>% 
   ggplot() +
-  geom_col(aes(x=tamano, y=values, fill=estimador), position = "dodge")
+  geom_col(aes(x=tamano, y=values, fill=estimador), position = "dodge") +
+  scale_fill_discrete(labels = c("EMV", "MAP"))
 
 ```
 
@@ -772,38 +772,87 @@ donde utilizamos el sub-indice $k,i$ para denotar el $k$-ésimo grupo de edad en
 el $i$-ésimo municipio.
 
 **Pregunta 16)** Genera histogramas para cada grupo de edad y discute si el
-supuesto anterior esta soportado por los datos. Para esto calcula las tasas de 
-mortalidad adecuadas. Auxiliate de `ggplot2::facet_wrap`.
+supuesto anterior esta soportado por los datos. Para esto calcula las tasas de mortalidad adecuadas. Auxiliate de `ggplot2::facet_wrap`.
+
+Por motivos de simplicidad usaremos la misma distribución previa para cada tasa de mortalidad asociada a grupos de edad y municipio que en los puntos anteriores. 
+
+
 
 ```{r}
+datos_edad <- poblacion %>% 
+    select(entidad, municipio, p_0a2:pob65_mas) %>% 
+  pivot_longer(p_0a2:pob65_mas, 
+               names_to = "GrupoEdad",
+               values_to = "Poblacion") %>% 
+  left_join(defunciones %>% 
+  group_by(entidad, municipio, edad_grupos) %>% 
+  count(name="Defunciones") %>% 
+  mutate(GrupoEdad = recode(edad_grupos,
+                            "[0,3)"="p_0a2",
+                            "[3,6)"="p_3a5",
+                            "[6,12)"="p_6a11",
+                            "[12,18)"="p_12a17",
+                            "[18,25)"="p_18a24",
+                            "[25,64)"="p_25a64",
+                            "[64,Inf]"="pob65_mas")),
+  by=c('entidad', 'municipio', 'GrupoEdad' )) %>% 
+  mutate(Defunciones = replace_na(Defunciones, 0),
+    mortalidad = Defunciones/Poblacion,
+    GrupoEdad = factor(GrupoEdad, 
+                       levels = c("p_0a2","p_3a5","p_6a11","p_12a17",
+                                  "p_18a24","p_25a64","pob65_mas")))
+
 
 ```
 
-Por motivos de simplicidad usaremos la misma distribución previa para cada tasa
-de mortalidad asociada a grupos de edad y municipio que en los puntos anteriores. 
-
-**Pregunta 17)** Utiliza graficos de dispersión para determinar si hay efectos
-de regularización. Las ideas las encuentras arriba en la pregunta 12 y 14.
+Ahora la grafica
 
 ```{r}
+datos_edad %>% 
+  ggplot() +
+  geom_histogram(aes(x=mortalidad), bins=40) +
+  facet_wrap(vars(GrupoEdad))
 
+datos_edad %>% 
+  group_by(GrupoEdad) %>% 
+  summarise(Poblacion = sum(Poblacion))
+```
+No necesariamente, el grupo de edad de más de 65 años no es tan numeroso y sus tasas son de las más algas
+
+**Pregunta 17)** Utiliza graficos de dispersión para determinar si hay efectos de regularización. Las ideas las encuentras arriba en la pregunta 12 y 14.
+
+```{r}
+datos_edad <-  datos_edad %>%
+  mutate(alpha_post = params.prior[1] + Defunciones,
+         beta_post = params.prior[2] + Poblacion,
+         theta_post = vec_gamma(1,alpha_post,beta_post))
 
 ```
 
 
 **Pregunta 18)** Para uno de los tres municipios que escogiste anteriormente
-utiliza la distribución predictiva posterior para verificar el ajuste del modelo
-para los grupos de edad: $[0,3), [18,25) \text{ y } [64, \infty).$ Puedes hacer
-un *lineup*.
+utiliza la distribución predictiva posterior para verificar el ajuste del modelo para los grupos de edad: $[0,3), [18,25) \text{ y } [64, \infty).$ 
+
+```{r}
+datos_edad %>% 
+  mutate(region = paste0(entidad, municipio)) %>% 
+  filter(region == '20335' | region=='14020' | region=='01005') %>% 
+  mutate(tamano = factor(ifelse(region=='20335',
+                         "chico",
+                         ifelse(region=='14020', "mediano", "grande")),
+                         levels = c("chico", "mediano", "grande"))) %>%
+  pivot_longer(cols=c(mortalidad, theta_post),
+               names_to = "estimador", values_to = "values") %>%
+  ggplot() +
+  geom_col(aes(x=tamano, y=values, fill=estimador), position = "dodge") +
+  scale_fill_discrete(labels = c("EMV", "MAP")) +
+  facet_wrap(~GrupoEdad, scales="free")
+```
+
 
 ## Conclusiones: 
 
 ¡El último modelo (edad-municipio) incorpora alrededor de 17K parámetros
 distintos! Sin duda, no es parsimonioso. De hecho, este modelo representa el
-extremo en complejidad para esta situación. Podemos incorporar una estructura
-jerárquica donde podemos interpretar una estructura multi-nivel en cuanto
-al conocimiento que podemos generar. Esto es por que en la estuctura de
-dependencia dejamos la misma distribucion previa sin importar municipio o grupo
-de edad. En cursos posteriores exploraremos estas opciones. Pero ahora, ¡a
-descansar!
+extremo en complejidad para esta situación. Podemos incorporar una estructura jerárquica donde podemos interpretar una estructura multi-nivel en cuanto al conocimiento que podemos generar. Esto es por que en la estuctura de dependencia dejamos la misma distribucion previa sin importar municipio o grupo de edad. En cursos posteriores exploraremos estas opciones. Pero ahora, ¡a descansar!
 
