@@ -1,7 +1,10 @@
 ---
 title: "Examen final - Otoño 2020"
-author: "Alfredo Garbuno Iñigo"
+author:
+- Bruno Gonzalez - 150370
+- Eduardo Moreno - 151280
 output:
+  html_document: default
   pdf_document: default
 ---
 
@@ -117,6 +120,8 @@ E[\theta \mid x_1 , \dots, x_n] = \frac{\alpha + \sum{x_i}}{\beta + n} \\
 Var[\theta \mid x_1 , \dots, x_n] = \frac{\alpha + \sum{x_i}}{(\beta + n)^2} 
 $$
 Sí se puede ver como un promedio entre los datos y el parámetro $\alpha$. Entre más datos sean más peso tendrán en la posterior. En cambio si los datos $n \to 0$, la posterior será igual a la distribución a priori.
+Además, interpretamos al parámetro $\alpha$ como la cantidad de éxitos y a $\beta$ como la cantidad de casos totales. Por lo que, el "valor esperado es el valor esperado éxitos".
+
 
 ---
 
@@ -187,7 +192,7 @@ $$
 ¿Qué distribución marginal tiene $y$ bajo el modelo conjugado?
 
 Es una distrubución binomial negativa, por lo tanto
-$$ p(y) \sim BinNeg(\alpha,\beta)$$
+$$ y \sim BinNeg(\alpha,\beta)$$
 
 ---
 
@@ -272,14 +277,14 @@ Para el tema de los $33$ estados analicemos los valores:
 ```{r defunciones por estado}
 defunciones$entidad %>% unique() %>% sort()
 ```
-Nótese que se tiene una entidad $99$, que por intuición indicaríamos que es una Entidad no identificada.
+Nótese que se tiene una entidad $999$, que por intuición indicaríamos que es una Entidad no identificada.
 
 Y ahora para la variable sexo:
 ```{r defunciones por genero}
 defunciones$sexo %>% unique() %>% sort()
 ```
 
-Nuestra hipótesis era casi correcta, tenemos un tercer sexo el cual es NaN, que indica nos sugiere que el usuario no se identificó con alguno de los 2 sexos o bien, no quiso declarar esa información.
+Nuestra hipótesis era casi correcta, tenemos un tercer sexo el cual es NaN, que nos sugiere que el usuario no se identificó con alguno de los 2 sexos o bien, no quiso declarar esa información.
 
 Ahora analicemos un poco la variabilidad de los datos.
 
@@ -289,12 +294,11 @@ defunciones %>%
   geom_boxplot(aes(color = sexo)) +
   ggtitle('Edad por sexo declarado') +
   xlab('Edad') +
-  ylab('Frecuencia relativa') +
-  ggthemes::theme_base()
+  ylab('Frecuencia relativa')
 
 defunciones %>% colnames()
 ```
-Es difícil analizar la dispersión de las edades por sexo debido a la existencia de $2$ valores atípicos, los cuales equivalen a la edad $1000$ años, lo cual no hace sentido, pues no existe ningún registro de una persona en la historia de la humanidad que haya sobrevivido a $1,000$ años. Suponemos que para dichas observaciones el individuo no quiso declarar su edad o bien hubo un  error en el registro de la captura del dato. A continuación analizaremos las edades sin dichos valores.
+Es difícil analizar la dispersión de las edades por sexo debido a la existencia de $2$ valores atípicos, los cuales equivalen a la edad $1,000$ años, lo cual no hace sentido, pues no existe ningún registro de una persona en la historia de la humanidad que haya sobrevivido a $1,000$ años. Suponemos que para dichas observaciones el individuo no quiso declarar su edad o bien hubo un  error en el registro de la captura del dato. A continuación analizaremos las edades sin dichos valores.
 
 ```{r defunciones sin atipicos}
 defunciones %>% 
@@ -303,8 +307,7 @@ defunciones %>%
   geom_boxplot(aes(color = sexo)) +
   ggtitle('Edad filtrada por sexo declarado') +
   xlab('Edad') +
-  ylab('Frecuencia relativa') +
-  ggthemes::theme_base()
+  ylab('Frecuencia relativa')
 ```
 
 Realizando el filtro correspondiente es un poco más "sencillo" (es una palabra que no nos gusta utilizar, ya que es relativo a la persona) analizar la dispersión de la edad para las personas:
@@ -438,6 +441,8 @@ mxmunicipio_choropleth(datos2)
 
 ```
 
+Es muy difícil encontrar un patrón claro para las defunciones por neumonía. Ya que se tiene estados en donde se tiene las tasas más altas y bajas al mismo tiempo.
+
 ¿Qué observas? No hay patrón tan claro. Especialmente si observamos lo que
 sucede en Chihuahua, Durango y Coahuila, donde tenemos municipios de ambas
 categorías. ¿Cómo puede ser que un mismo estado tenga las tasas mas altas y
@@ -492,6 +497,7 @@ para seleccionar dichos valores.
 La tasa de habitantes fallecidos por neumonía (filtrado por años tomando en cuenta únicamente del año $2015$ hasta el $2017$) presenta un comportamiento uniforme (no en el sentido estricto, pero sí de una forma bastante aproximada) a lo largo del periodo de estudio en este proyecto para los distintos grupos de edades, por lo que, se decidió dar como cota superior el promedio de la tasa de mortalidad para el rango de edad "$70+$ years old", ya que son los máximos alcanzado y como límite inferior el promedio de las tasa del rango "$5-14$ years old", pues son las mínimas observadas.
 
 ```{r elicitacion}
+### promedio de tasa de mortalidad para grupos de edad mayores y menores
 cot_sup <- mean(c(184.31, 181.42, 178.51))
 cot_min <- mean(c(1.14, 1.12, 1.12))
 
@@ -524,19 +530,21 @@ Esto te servirá de verificación que el método funciona adecuadamente.
 ```{r histogramas elicitacion}
 set.seed(min(claves_unicas))
 
+# simulamos en base a la distr apriori
 n_sim <- 5000
 g_priori_1 <- rgamma(n_sim, initial_guess[1], initial_guess[2])
 g_priori_2 <- rgamma(n_sim, params.prior[1], params.prior[2])
 
+### juntamos los datos
 data_gamma <- 
   data.frame(update = c( rep("Tipo 1", n_sim), 
                        rep("Tipo 2",n_sim)),
   value = c(g_priori_1, g_priori_2))
 
+# graficamos
 data_gamma %>%
   ggplot(aes(x = value, fill = update)) +
   geom_histogram(alpha=0.3, position = 'identity', bins = 30) +
-  # scale_fill_manual(values=c("#69b3a2", "#404080")) +
   xlab("Tasas de mortalidad por neuomonia") +
   ylab("Frecuencia absoluta") +
   ggtitle('Simulaciones para distribucion A-priori')
@@ -550,11 +558,13 @@ comparaciones. Por otro lado, no te preocupes si no se ven identicas. El punto e
 ver que nuestras creencias iniciales se ven coherentes. 
 
 ```{r message=FALSE, warning=FALSE}
+# filtramos por municipios desconocidos (999)
 data_neum <- full_data %>% 
   filter(municipio != 999) %>% 
   ungroup() %>%
   select(tasa_mort)
 
+# obtenemos el plot del historico y simulacion con distribucion apriori
 data.frame(muertes = c(data_neum$tasa_mort, 
                        g_priori_2),
            tipo = c(rep('Historico', length(data_neum$tasa_mort)), 
@@ -577,6 +587,7 @@ escala logaritmica. Para esto checa la función: `ggplot2::scale_x_log10` y
 `ggplot2::scale_y_log10`
 
 ```{r}
+# comparacion de tasa de mortalidad y poblacion total
 full_data %>%
   ggplot(aes(x = tasa_mort, y = pob_tot)) +
   geom_point(color = 'tomato') +
@@ -614,6 +625,7 @@ tamaño $n = 10^3, 10^4, 10^5.$
 ```{r, echo = FALSE}
 set.seed(min(claves_unicas))
 
+# analizamos por tamaño de poblacion
 muer_103 <- rnbinom(n_sim,
                     size = 10^3*(params.prior[1]),
                     prob = (params.prior[2]/(params.prior[2]+1)))
@@ -624,11 +636,13 @@ muer_105 <- rnbinom(n_sim,
                     size = 10^5*(params.prior[1]),
                     prob = (params.prior[2]/(params.prior[2]+1)))
 
+# juntamos la informacion en un mismo dataframe
 data_muer_sim <- data.frame(tamanio_pob = c(rep("1,000", n_sim), 
                                             rep("10,000", n_sim),
                                             rep("100,000", n_sim)),
                             value = c(muer_103, muer_104, muer_105))
 
+# graficamos para tamaño pequeño de poblacion
 data_muer_sim %>%
   filter(tamanio_pob == "1,000") %>%
   ggplot(aes(x = value, fill = tamanio_pob)) +
@@ -637,6 +651,7 @@ data_muer_sim %>%
   xlab('Muertes por neumonia') +
   ylab('Frecuencia absoluta')
 
+# graficamos para tamaño mediano de poblacion
 data_muer_sim %>%
   filter(tamanio_pob == "10,000") %>%
   ggplot(aes(x = value, fill = tamanio_pob)) +
@@ -645,6 +660,7 @@ data_muer_sim %>%
   xlab('Muertes por neumonia') +
   ylab('Frecuencia absoluta')
 
+# graficamos para tamaño grande de poblacion
 data_muer_sim %>%
   filter(tamanio_pob == "100,000") %>%
   ggplot(aes(x = value, fill = tamanio_pob)) +
@@ -653,7 +669,7 @@ data_muer_sim %>%
   xlab('Muertes por neumonia') +
   ylab('Frecuencia absoluta')
 
-
+# graficamos y distinguimos por de poblacion
 data_muer_sim %>%
   ggplot(aes(x = value, fill = tamanio_pob)) +
   geom_histogram(alpha = 0.5, position = 'identity') +
@@ -664,6 +680,8 @@ data_muer_sim %>%
 
 rm(muer_103, muer_104, muer_105, data_muer_sim)
 ```
+
+Analicemos que las simulaciones obtenidas nos indican que los muertos por neumonía para cada una de las poblaciones simuladas disminuyen. Para el caso de el tamaño de población de $100,000$ pareciese una forma "unimodal" y "simétrica", pero esto sólo queda como comentario no como resultado.
 
 **Pregunta 14)** Calcula los valores posteriores de las tasas de mortalidad bajo
 nuestro modelo bayesiano y compara con los estimadores de máxima verosimilitud. 
@@ -680,9 +698,11 @@ $$ y | n \sim BN(\alpha \text{ } + \text{ } \sum_{i=1}^nx_i, \text{ } \beta \tex
 ```{r message=FALSE, warning=FALSE}
 set.seed(min(claves_unicas))
 
+# filtramos por municipios desconocidos (999)
 full_data_filt <- full_data %>% 
   filter(municipio != 999)
 
+# funcion para calcular los parametros de la distribucion posterior
 calcular_pars_posterior <- function(num_muertes , tam_pob, params.prior){
   
   # Parametros iniciales
@@ -698,14 +718,18 @@ calcular_pars_posterior <- function(num_muertes , tam_pob, params.prior){
   return(c(alpha_post, beta_post)) 
   }
 
+# calculamos los parametros de la distr posterior para cada municipio
 pars_post <- apply(full_data_filt[,c('muertes_neum', 'pob_tot')], 1, 
              function(x) calcular_pars_posterior(x[1], x[2],
                                                  params.prior)) %>% 
   t()
 
+# simulamos tasas de mortalidad para cada municipio
 full_data_filt$tasa_sim_post <-  apply(pars_post, 1, 
                                        function(x) rgamma(1, x[1], x[2]))
 
+
+# simulamos tasas de mortalidad para cada municipio
 full_data_filt %>% 
   ggplot(aes(x = tasa_sim_post, y = tasa_mort)) +
   geom_point() +
@@ -713,6 +737,8 @@ full_data_filt %>%
   ylab('Tasa de mortalidad observada') +
   ggtitle('Ajuste de simulacion')
 
+# graficamos tasas de mortalidad simuladas (posterior) y observadas en escala
+# logaritmica
 full_data_filt %>% 
   ggplot(aes(x = tasa_sim_post, y = tasa_mort)) +
   geom_point() +
@@ -722,17 +748,10 @@ full_data_filt %>%
   ylab('Tasa de mortalidad observada (log)') +
   ggtitle('Ajuste de simulacion - escala logaritmica')
 
-# data.frame(tasa_mort = c(full_data_filt$tasa_mort, 
-#                          full_data_filt$tasa_sim_post)) %>% 
-#   mutate(Tipo = c(rep('Observada', 2462), 
-#                   rep('Sim posterior', 2462))) %>% 
-#   ggplot(aes(x = tasa_mort, fill = Tipo)) +
-#   geom_histogram(alpha = 0.5) +
-#   xlab('Tasa de mortalidad') +
-#   ylab('Frecuencia absoluta') +
-#   ggtitle('Comparacion de simulacion')
-
-
+# calculamos la tasa de mortalidad por max verosimilitud
+# como suponemos que la defuncion se distribuye POISSON, entonces el estimador
+# por maxima verosimlitud para theta es el promedio: 
+# (numero de defunciones)/(tamaño de poblacion)
 full_data_filt$tasa_sim_ver <- full_data_filt$muertes_neum/full_data_filt$pob_tot
 
 data.frame(tasa_mort = c(full_data_filt$tasa_sim_ver, 
@@ -757,38 +776,45 @@ observado de defunciones.
 ```{r}
 set.seed(min(claves_unicas))
 
+# calculamos el tamaño de poblacion
+# chico <= 1,000
+# 1,000 < mediano <= 10,000
+# 10,000 < grande
 full_data_filt <- full_data_filt %>% 
   mutate(tamanio = ifelse(pob_tot <= 1000, 1, 
                           ifelse(pob_tot <= 10000, 2, 3)))
 
+# cantidad de municipios por tamaño
 full_data_filt %>% 
   group_by(tamanio) %>% 
   summarise(count = n())
 
-
+# seleccionamos aleatoriamente un municipio de cada tamaño
 pos_chico <- sample(which(full_data_filt$tamanio == 1), 1)
 pos_mediano <- sample(which(full_data_filt$tamanio == 2), 1)
 pos_grande <- sample(which(full_data_filt$tamanio == 3), 1)
 
+# obtenemos los parametros 
 par_post_chico <- pars_post[pos_chico,]
 par_post_mediano <- pars_post[pos_mediano,]
 par_post_grande <- pars_post[pos_grande,]
 
-
+# Simulamos la distribución predictiva posterior para municipio pequeño
 data.frame(sim = rnbinom(1000, 
                     size = par_post_chico[2]*(params.prior[1]) + par_post_chico[1],
                     prob = (params.prior[2] + 1)/(params.prior[2] + 1 + 1) )) %>% 
   ggplot(aes(x = sim)) +
   geom_histogram() +
   geom_vline(xintercept = par_post_chico[1], color = 'red') +
-  geom_text(aes(x=2.8, y=350,
+  geom_text(aes(x=1.36, y=410,
                 label="Defunciones observadas"), 
-            colour="black", vjust = 1.2) +
+            colour="tomato", vjust = 1.2) +
   xlab('Defunciones por neumonia') +
   ylab('Frecuencia absoluta') +
   ggtitle('Simulacion defunciones por neumonia') +
   labs(subtitle = 'Municipio de tamanio pequenio')
 
+# Simulamos la distribución predictiva posterior para municipio mediano
 data.frame(sim = rnbinom(1000, 
                     size = par_post_mediano[2]*(par_post_mediano[1]) + par_post_mediano[1],
                     prob = (par_post_mediano[2] + 1)/(par_post_mediano[2] + 1 + 1) )) %>% 
@@ -797,27 +823,26 @@ data.frame(sim = rnbinom(1000,
   geom_vline(xintercept = par_post_mediano[1], color = 'red') +
   geom_text(aes(x=3, y=250,
                 label="Defunciones observadas"), 
-            colour="black", vjust = 1.2) +
+            colour="tomato", vjust = 1.2) +
   xlab('Defunciones por neumonia') +
   ylab('Frecuencia absoluta') +
   ggtitle('Simulacion defunciones por neumonia') +
   labs(subtitle = 'Municipio de tamanio mediano')
 
+# Simulamos la distribución predictiva posterior para municipio grande
 data.frame(sim = rnbinom(1000, 
                     size = par_post_grande[2]*(par_post_grande[1]) + par_post_grande[1],
                     prob = (par_post_grande[2] + 1)/(par_post_grande[2] + 1 + 1) )) %>% 
   ggplot(aes(x = sim)) +
   geom_histogram() +
   geom_vline(xintercept = par_post_grande[1], color = 'red') +
-  geom_text(aes(x=57, y=125,
+  geom_text(aes(x=60, y=125,
                 label="Defunciones observadas"), 
-            colour="black", vjust = 1.2) +
+            colour="tomato", vjust = 1.2) +
   xlab('Defunciones por neumonia') +
   ylab('Frecuencia absoluta') +
   ggtitle('Simulacion defunciones por neumonia') +
   labs(subtitle = 'Municipio de tamanio grande')
-
-
 ```
 
 
@@ -839,6 +864,8 @@ supuesto anterior esta soportado por los datos. Para esto calcula las tasas de
 mortalidad adecuadas. Auxiliate de `ggplot2::facet_wrap`.
 
 ```{r}
+# Agrupamos la información para poder tener el grupo de edad y trabajarlo con
+# ggplot
 datos_edad <- poblacion %>% 
     select(entidad, municipio, p_0a2:pob65_mas) %>% 
   pivot_longer(p_0a2:pob65_mas, 
@@ -867,6 +894,7 @@ datos_edad <- poblacion %>%
 Ahora la grafica
 
 ```{r}
+# graficamos diferenciando por grupo de edad
 datos_edad %>% 
   ggplot() +
   geom_histogram(aes(x=mortalidad), bins=40) +
@@ -883,33 +911,34 @@ de mortalidad asociada a grupos de edad y municipio que en los puntos anteriores
 de regularización. Las ideas las encuentras arriba en la pregunta 12 y 14.
 
 ```{r vectorizacion gamma}
+# obtenemos los parametros de la distr posterior para cada grupo de edad
 vec_gamma <- Vectorize(rgamma)
 datos_edad <-  datos_edad %>%
   mutate(alpha_post = params.prior[1] + Defunciones,
          beta_post = params.prior[2] + Poblacion,
          theta_post = vec_gamma(1,alpha_post,beta_post))
-
-
-
 ```
 
 ```{r datos por edad}
+# graficamos por grupo de edad
 datos_edad %>% 
   ggplot() +
   geom_point(aes(x=mortalidad, y = theta_post), size=0.5, alpha=0.5) +
   facet_wrap(vars(GrupoEdad), scale="free")
 ```
-
+Para el caso de la población con $65$ o más años hay una mayor tasa de mortalidad, lo cual lo hemos observado en resultados previos. Además notemos que para cada grupo de edad tenemos valores atípicos.
 
 **Pregunta 18)** Para uno de los tres municipios que escogiste anteriormente
 utiliza la distribución predictiva posterior para verificar el ajuste del modelo
 para los grupos de edad: $[0,3), [18,25) \text{ y } [64, \infty).$ 
 
 ```{r simulacion por edad}
+# seleccionamos municipios de distintos tamaños de manera aleatoria
 pos_chico <- sample(which(full_data_filt$tamanio == 1), 1)
 pos_mediano <- sample(which(full_data_filt$tamanio == 2), 1)
 pos_grande <- sample(which(full_data_filt$tamanio == 3), 1)
 
+# obtenemos su informacion
 chico <- paste0(full_data[pos_chico,'entidad'], 
                 full_data[pos_chico,'municipio'])
 mediano <- paste0(full_data[pos_mediano,'entidad'],
@@ -917,6 +946,7 @@ mediano <- paste0(full_data[pos_mediano,'entidad'],
 grande <- paste0(full_data[pos_grande,'entidad'], 
                  full_data[pos_grande,'municipio'])
 
+# obtenemos un label para el tamaño
 muestra_edad <- datos_edad %>% 
   mutate(region = paste0(entidad, municipio)) %>% 
   filter(region == chico | region==mediano | region==grande) %>% 
@@ -925,35 +955,35 @@ muestra_edad <- datos_edad %>%
                          ifelse(region==mediano, "mediano", "grande")),
                          levels = c("chico", "mediano", "grande")))
 
+# replicamos la informacion  para posteriormente simular
 res = muestra_edad
-
 for (i in 1:1000){
   res = rbind(res, muestra_edad)
 } 
   vec_bn <- Vectorize(rnbinom)
 
-
+# simulamos
 res <- res %>% 
   mutate(sim = vec_bn(1,  size = Poblacion*(params.prior[1])+Defunciones,
                            prob = (params.prior[2]+1)/(params.prior[2]+1+1)))
-
 ```
 
 
 ```{r Municipio grande}
-
+# analizamos municipio grande
 res %>% 
   filter(tamano == "grande") %>% 
   ggplot() +
   geom_histogram(aes(x=sim)) +
   facet_wrap(~GrupoEdad, scale = "free")
 
-muestra_edad %>% filter(tamano=="grande")
+# muestra_edad %>% filter(tamano=="grande")
 
 ```
 
-```{r Municipio mediano}
 
+```{r Municipio mediano}
+# analizamos municipio mediano
 res %>% 
   filter(tamano == "mediano") %>% 
   ggplot() +
@@ -965,16 +995,19 @@ muestra_edad %>% filter(tamano=="mediano")
 ```
 
 ```{r Municipio chico}
-
+# analizamos municipio chico
 res %>% 
   filter(tamano == "chico") %>% 
   ggplot() +
   geom_histogram(aes(x=sim)) +
   facet_wrap(~GrupoEdad, scale = "free")
 
-muestra_edad %>% filter(tamano=="chico")
+# muestra_edad %>% filter(tamano=="chico")
 
 ```
+
+Uno podría asustarse al observar esta gráfica, ya que, la simulación indica que los grupos de edad de los adultos jóvenes tendrán una mayor cantidad de defunciones, sin embargo, no olvidemos que también dichos grupos son los que poseen una mayor cantidad de población. Lo alarmante son para los grupos con "poca" población como es el aso de los bebés (0 a 2 años) y gente mayor (mayores a 65 años).
+
 
 ## Conclusiones: 
 

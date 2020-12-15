@@ -1,6 +1,8 @@
 ---
 title: "Examen final - Otoño 2020"
-author: "Alfredo Garbuno Iñigo"
+author: 
+  "Bruno"
+  "
 output:
   html_document: default
   pdf_document: default
